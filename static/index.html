@@ -1,10 +1,14 @@
 <!DOCTYPE html>
 <html>
     <head>
-        <meta charset="UTF-8">
+        <meta charset='UTF-8'>
         <title>Крестики-нолики</title>
+        <script type='text/javascript' src='/js/main.js'></script>
+        <link rel='stylesheet' type='text/css' href='/css/main.css'>
     </head>
-    <body>
-        Hello world!
+    <body onload='app_start();'>
+        <div class='flex-container'>
+            <canvas id='myCanvas' width='300' height='300' style='border:1px solid #000000;'></canvas>
+        </div>
     </body>
 </html>

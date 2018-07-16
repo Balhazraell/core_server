@@ -6,13 +6,12 @@ import (
 	"net/http"
 )
 
-const HOST = "localhost"
-const PORT = 5432
-
 func init() {
 	fsJS := http.FileServer(http.Dir("../static/js/"))
+	fsCSS := http.FileServer(http.Dir("../static/css/"))
 
 	http.Handle("/js/", http.StripPrefix("/js", fsJS))
+	http.Handle("/css/", http.StripPrefix("/css", fsCSS))
 
 	http.HandleFunc("/", returnIndex)
 }
@@ -24,7 +23,7 @@ func returnIndex(response http.ResponseWriter, request *http.Request) {
 		fmt.Fprintf(response, err.Error())
 	}
 
-	templateErr := t.ExecuteTemplate(response, "index", nil)
+	templateErr := t.ExecuteTemplate(response, "index.html", nil)
 
 	if templateErr != nil {
 		fmt.Fprintf(response, templateErr.Error())
