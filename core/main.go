@@ -7,7 +7,7 @@ import (
 )
 
 func init() {
-	fsJS := http.FileServer(http.Dir("../static/js/"))
+	fsJS := http.FileServer(http.Dir("../static/js/dist/"))
 	fsCSS := http.FileServer(http.Dir("../static/css/"))
 
 	http.Handle("/js/", http.StripPrefix("/js", fsJS))
