@@ -91,7 +91,9 @@
   !*** ./js/src/chunck.js ***!
   \**************************/
 /*! no static exports found */
-/***/ (function(module, exports) {
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
 
 class Chunck {
     constructor(points_list){
@@ -120,7 +122,10 @@ exports.Chunck = Chunck;
 /*! no static exports found */
 /***/ (function(module, exports, __webpack_require__) {
 
+"use strict";
+
 var chunck = __webpack_require__(/*! ./chunck */ "./js/src/chunck.js");
+var websocket = __webpack_require__(/*! ./websockets */ "./js/src/websockets.js");
 
 var canvas;
 var ctx;
@@ -151,8 +156,7 @@ if (document.readyState != 'loading'){
 function app_start(){
     canvas = document.getElementById('myCanvas');
     ctx = canvas.getContext('2d');
-
-    // websocket_connect();
+    websocket.connect();
     draw_grid();
 }
 
@@ -172,6 +176,66 @@ function draw_grid(){
     requestAnimationFrame(draw_grid);
 }
 
+
+/***/ }),
+
+/***/ "./js/src/websockets.js":
+/*!******************************!*\
+  !*** ./js/src/websockets.js ***!
+  \******************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+var chunck = __webpack_require__(/*! ./chunck */ "./js/src/chunck.js");
+
+// Набор функций получаемых от сервера
+var handlers = {
+    'set_grid': set_grid
+};
+
+// Пошла работа с websockets
+function connect(){
+    var ws = new WebSocket('ws://127.0.0.1:8081/connect');
+    ws.onopen(open);
+    ws.onclose(close);
+    ws.onmessage(message);
+}
+
+// websocket стартанул.
+function open(event){
+    console.log('websocket is open!');
+}
+
+// websocket закрылся.
+function close(event){
+    console.log('websocket is close!');
+}
+
+// пришло сообщение по websocket.
+function message(event){
+    var data = JSON.parse(event.data);
+    handlers[data['handler_name']](data['data']);
+}
+
+// ------------- incoming ------------------
+// Пришла сетка.
+function set_grid(data){
+    new_grid = data['grid'];
+    // По сути очищаем список.
+    grid_coordinats = [];
+    for (let i = 0; i < new_grid.length; i++){
+        let chunck = new chunck.Chunck(
+            // первым аргументом потом будет id.
+            new_grid[i]
+        );
+        grid_coordinats.append(chunck);
+    } 
+}
+
+exports.connect = connect;
 
 /***/ })
 

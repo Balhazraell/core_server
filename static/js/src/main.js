@@ -1,4 +1,6 @@
+'use strict';
 var chunck = require('./chunck');
+var websocket = require('./websockets');
 
 var canvas;
 var ctx;
@@ -29,8 +31,7 @@ if (document.readyState != 'loading'){
 function app_start(){
     canvas = document.getElementById('myCanvas');
     ctx = canvas.getContext('2d');
-
-    // websocket_connect();
+    websocket.connect();
     draw_grid();
 }
 

@@ -1,3 +1,4 @@
+'use strict';
 class Chunck {
     constructor(points_list){
         this.id = -1;
