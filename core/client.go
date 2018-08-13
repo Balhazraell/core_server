@@ -20,15 +20,25 @@ type Client struct {
 	doneCh chan bool   // Канал для завершения работы соединения.
 }
 
-func NewClient(ws *websocket.Conn) *Client {
-	if ws == nil {
-		panic("ws cannot be nil")
-	}
+func (client *Client) Done() {
+	// Нужно убить данный объект и его связи...
 
-	ch := make(chan string, channalBufSize)
-	doneCh := make(chan bool)
-	newClient := &Client{maxID, ws, ch, doneCh}
-	maxID++
-
-	return newClient
+	// так как запущены бесконечные циклы для прослушивания каналов,
+	// теперь их надо останоить.
+	client.doneCh <- true
 }
+
+func (client *Client) listenWrite(){
+	for{
+		select{
+		case <- client.doneCh:
+			DelClient(client)
+			// если данный "слушатель" первым поймал сообщение об удалении, 
+			// то удаляем и сообщам дальше что бы следующий "слушатель" 
+			// поймал сообщение и завершил работу
+			client.doneCh <- true 
+			return
+		}
+	}
+}
+
