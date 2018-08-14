@@ -198,20 +198,23 @@ var handlers = {
 
 // Пошла работа с websockets
 function connect(){
-    var ws = new WebSocket('ws://127.0.0.1:8081/connect');
-    ws.onopen(open);
-    ws.onclose(close);
-    ws.onmessage(message);
+    // Здесь происходит падение если не можем подключится, надо красиво обработать...
+    var ws = new WebSocket('ws://127.0.0.1:8081/appgame');
+    ws.onopen = open;
+    ws.onclose = close;
+    ws.onmessage = message;
 }
 
 // websocket стартанул.
 function open(event){
     console.log('websocket is open!');
+    console.log(event);
 }
 
 // websocket закрылся.
 function close(event){
     console.log('websocket is close!');
+    console.log(event);
 }
 
 // пришло сообщение по websocket.

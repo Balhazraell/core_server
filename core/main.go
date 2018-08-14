@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"html/template"
 	"net/http"
+
+	"./websockets"
 )
 
 func init() {
@@ -32,6 +34,10 @@ func returnIndex(response http.ResponseWriter, request *http.Request) {
 }
 
 func main() {
-	http.ListenAndServe(":8081", nil)
+	// Стартуем сервер websocket.
+	websockets.Start()
+
+	// Стартуем сервер статики.
 	fmt.Println("Server is started...")
+	http.ListenAndServe(":8081", nil)
 }
