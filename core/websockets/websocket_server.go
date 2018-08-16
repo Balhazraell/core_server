@@ -3,6 +3,7 @@ package websockets
 import (
 	"fmt"
 	"net/http"
+	"runtime"
 
 	"golang.org/x/net/websocket"
 )
@@ -49,6 +50,7 @@ func (server *Server) listen() {
 
 		client := server.newClient(ws)
 		server.clients[client.id] = client
+		fmt.Println(runtime.NumGoroutine())
 		fmt.Println("New client is connected")
 		client.Listen()
 
@@ -91,7 +93,9 @@ func (server *Server) newClient(ws *websocket.Conn) *Client {
 
 	ch := make(chan string, channalBufSize)
 	doneCh := make(chan bool)
-	client := &Client{maxID, ws, ch, doneCh}
+	doneRead := make(chan bool)
+	doneWrite := make(chan bool)
+	client := &Client{maxID, ws, ch, doneCh, doneRead, doneWrite}
 	maxID++
 
 	return client
@@ -100,6 +104,7 @@ func (server *Server) newClient(ws *websocket.Conn) *Client {
 func (server *Server) DelClient(client *Client) {
 	delete(AppServer.clients, client.id)
 	fmt.Println("Клиент удален!")
+	fmt.Println(runtime.NumGoroutine())
 }
 
 func (server *Server) IncomingMessage(client *Client, message *IncomingMessage) {

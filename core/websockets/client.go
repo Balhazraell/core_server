@@ -3,6 +3,7 @@ package websockets
 import (
 	"fmt"
 	"io"
+	"sync"
 
 	"golang.org/x/net/websocket"
 )
@@ -25,6 +26,10 @@ type Client struct {
 	ws     *websocket.Conn
 	ch     chan string // Канал для отправки сообщения.
 	doneCh chan bool   // Канал для завершения работы соединения.
+
+	// FIX: надеюсь временное решение.
+	doneRead  chan bool
+	doneWrite chan bool
 }
 
 func (client *Client) Done() {
@@ -32,50 +37,59 @@ func (client *Client) Done() {
 
 	// так как запущены бесконечные циклы для прослушивания каналов,
 	// теперь их надо останоить.
-	client.doneCh <- true
+	client.doneRead <- true
+	client.doneWrite <- true
 }
 
 func (client *Client) Listen() {
-	go client.listenWrite()
-	// Дичайшее уебанство... данный метод не в горутине, что бы клиент не прекратил работу и
-	// не завершил себя раньше времени...
-	client.listenRead()
+	var wg sync.WaitGroup
+	wg.Add(2)
+	go func() {
+		defer wg.Done()
+		client.listenWrite()
+	}()
+
+	go func() {
+		defer wg.Done()
+		client.listenRead()
+	}()
+
+	wg.Wait()
+
+	fmt.Printf("Listen у клиента %d работу закончил \n", client.id)
+	AppServer.DelClient(client)
 }
 
 func (client *Client) listenWrite() {
 	for {
 		select {
-		case <-client.doneCh:
-			AppServer.DelClient(client)
-			// если данный "слушатель" первым поймал сообщение об удалении,
-			// то удаляем и сообщам дальше что бы следующий "слушатель"
-			// поймал сообщение и завершил работу
-			client.doneCh <- true
+		case <-client.doneWrite:
+			fmt.Printf("listenWrite у клиента %d работу закончил \n", client.id)
 			return
 		}
 	}
 }
 
 func (client *Client) listenRead() {
+	defer func() {
+		fmt.Printf("listenRead у клиента %d работу закончил \n", client.id)
+	}()
 	for {
 		select {
-		case <-client.doneCh:
-			AppServer.DelClient(client)
-			// если данный "слушатель" первым поймал сообщение об удалении,
-			// то удаляем и сообщам дальше что бы следующий "слушатель"
-			// поймал сообщение и завершил работу
-			client.doneCh <- true
+		case <-client.doneRead:
+			return
 		default:
 			var msg IncomingMessage
 			err := websocket.JSON.Receive(client.ws, &msg)
 
 			if err == io.EOF {
-				client.doneCh <- true
+				client.doneWrite <- true
+				return
 			} else if err != nil {
-				fmt.Println("Проблема чтения сообщения от клиента.")
-				fmt.Println(err)
+				fmt.Printf("Проблема чтения сообщения от клиента \n: %v", err)
 				// Если произошла ошибка соединения, допустим упал клиент, то убираем это соединение.
-				client.doneCh <- true
+				client.doneWrite <- true
+				return
 			} else {
 				AppServer.IncomingMessage(client, &msg)
 			}
