@@ -5,6 +5,7 @@ import (
 	"html/template"
 	"net/http"
 
+	"./core"
 	"./websockets"
 )
 
@@ -35,6 +36,8 @@ func returnIndex(response http.ResponseWriter, request *http.Request) {
 
 func main() {
 	defer fmt.Println("Server is ended...")
+	// Запускаем игровой сервер.
+	core.GameServerStart()
 
 	// Стартуем сервер websocket.
 	websockets.Start()

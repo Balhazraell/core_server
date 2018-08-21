@@ -6,6 +6,8 @@ import (
 	"runtime"
 
 	"golang.org/x/net/websocket"
+
+	"../core"
 )
 
 // пока так, но потом надо сделать отдельную инициализацию...
@@ -72,11 +74,13 @@ func (server *Server) newClient(ws *websocket.Conn) *Client {
 		panic("ws cannot be nil")
 	}
 
+	// сделать через две разные функции...
+	// Блять... вообще отдачу карты должна инициировать комната...
+	clientId, gameMap := core.GameServer.NewConnect(666)
 	ch := make(chan string, channalBufSize)
 	shutdownRead := make(chan bool)
 	shutdownWrite := make(chan bool)
-	client := &Client{maxID, ws, ch, shutdownRead, shutdownWrite}
-	maxID++
+	client := &Client{clientId, ws, ch, shutdownRead, shutdownWrite}
 
 	return client
 }
