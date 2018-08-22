@@ -18,7 +18,7 @@ type Server struct {
 	clients map[int]*Client
 
 	// Каналы
-	doneCh chan bool
+	shutdownCh chan bool
 	// inComing  chan string
 	outComing chan string
 }
@@ -26,13 +26,13 @@ type Server struct {
 func Start() {
 	fmt.Println("Websocket start...")
 	clients := make(map[int]*Client)
-	doneCh := make(chan bool)
+	shutdownCh := make(chan bool)
 	// inComing := make(chan string)
 	outComing := make(chan string)
 
 	AppServer = Server{
 		clients,
-		doneCh,
+		shutdownCh,
 		// inComing,
 		outComing,
 	}
@@ -61,7 +61,7 @@ func (server *Server) listen() {
 	http.Handle("/appgame", websocket.Handler(onConnected))
 	for {
 		select {
-		case <-server.doneCh:
+		case <-server.shutdownCh:
 			return
 		case <-server.outComing:
 			fmt.Println("Необходимо отослать сообщение пользователям.")
@@ -79,8 +79,10 @@ func (server *Server) newClient(ws *websocket.Conn) *Client {
 	clientId, gameMap := core.GameServer.NewConnect(666)
 	ch := make(chan string, channalBufSize)
 	shutdownRead := make(chan bool)
-	shutdownWrite := make(chan bool)
-	client := &Client{clientId, ws, ch, shutdownRead, shutdownWrite}
+	// shutdownWrite := make(chan bool)
+	client := &Client{clientId, ws, ch, shutdownRead}
+
+	client.SetGameMap(gameMap)
 
 	return client
 }

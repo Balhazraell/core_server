@@ -1,12 +1,13 @@
 package core
 
 import (
+	"encoding/json"
 	"fmt"
 )
 
 type Chunc struct {
-	State       int
-	Сoordinates [][2]int
+	State       int      `json:"state"`
+	Сoordinates [][2]int `json:"coordinates"`
 }
 
 type Room struct {
@@ -58,11 +59,19 @@ func (room *Room) Stop() {
 	room.shutdownLoop <- true
 }
 
-func (room *Room) ClientConnect(client *Client) []*Chunc {
+func (room *Room) ClientConnect(client *Client) []byte {
 	// Необходимо добавить в комнату пользователя.
 	fmt.Printf("К комнате %v подключился новый клиент с id=%v.", room.Id, client.Id)
 	room.clients[client.Id] = client
-	return room.Map
+	// ВОобще не при подключении надо возвращать карту, это надо делать по специальной функции,
+	// Наверно надо отдавать в loop в канал id пользователя, кому надо задать карту...
+	gameMap, err := json.Marshal(room.Map)
+
+	if err != nil {
+		fmt.Printf("При формировнии json при подключении нового клиента произошла ошибка %v", err)
+	}
+
+	return gameMap
 }
 
 func (room *Room) ClientDisconnect(client *Client) {

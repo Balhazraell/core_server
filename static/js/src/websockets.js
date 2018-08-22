@@ -38,6 +38,7 @@ function message(event){
 // Пришла сетка.
 function set_grid(data){
     new_grid = data['grid'];
+    print(data)
     // По сути очищаем список.
     grid_coordinats = [];
     for (let i = 0; i < new_grid.length; i++){

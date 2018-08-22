@@ -63,9 +63,11 @@ func (server *gameServer) loop() {
 	}
 }
 
-func (server *gameServer) NewConnect(roomId int) (int, []*Chunc) {
+func (server *gameServer) NewConnect(roomId int) (int, []byte) {
 	// сейчас пока буду закидывать в первую комнату.
 	// Подключаем по id комнаты в которую он входит.
+	// TODO: ЭТОНАДО РАЗДЕЛИТЬ НА ДВЕ ФУНКЦИИ!!!!
+	// подключение нового пользователя и получение им карты это два разных события.
 
 	client := Client{
 		clientMaxId,
