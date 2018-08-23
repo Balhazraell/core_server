@@ -1,7 +1,9 @@
 'use strict';
+
 class Chunck {
-    constructor(points_list){
+    constructor(state, points_list){
         this.id = -1;
+        this.state = state;
         this.draw_poins = points_list;
         
         this.normal_color = '#000000';
@@ -11,7 +13,7 @@ class Chunck {
     }
 }
 
-// пока старвый вариант мне нравится больше надо посмотреть ES6
+// TODO: пока старвый вариант мне нравится больше надо посмотреть ES6
 // const _Chunck = Chunck;
 // export { _Chunck as Chunck };
 

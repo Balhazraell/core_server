@@ -38,6 +38,7 @@ func (room *Room) createMap() {
 
 			room.Map = append(room.Map, &chunc)
 		}
+		y += step
 	}
 }
 
@@ -55,7 +56,6 @@ func StartNewRoom(id int) *Room {
 
 func (room *Room) Stop() {
 	// Какая-нибудь логика завершения работы.
-
 	room.shutdownLoop <- true
 }
 

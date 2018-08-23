@@ -95,9 +95,11 @@
 
 "use strict";
 
+
 class Chunck {
-    constructor(points_list){
+    constructor(state, points_list){
         this.id = -1;
+        this.state = state;
         this.draw_poins = points_list;
         
         this.normal_color = '#000000';
@@ -132,17 +134,17 @@ var ctx;
 
 // Заглушки.
 var grid_coordinats = [
-    new chunck.Chunck([[0,0],     [0, 100],   [100, 100], [100, 0]]),
-    new chunck.Chunck([[0,100],   [0, 200],   [100, 200], [100, 100]]),
-    new chunck.Chunck([[0,200],   [0, 300],   [100, 300], [100, 200]]),
+    // new chunck.Chunck(0, [[0, 0],     [100, 0],   [100, 100], [0, 100]]),
+    // new chunck.Chunck(0, [[100, 0],   [200, 0],   [200, 100], [100, 100]]),
+    // new chunck.Chunck(0, [[200, 0],   [300, 0],   [300, 100], [200, 100]]),
 
-    new chunck.Chunck([[100,0],   [100, 100], [200, 100], [200, 0]]),
-    new chunck.Chunck([[100,100], [100, 200], [200, 200], [200, 100]]),
-    new chunck.Chunck([[100,200], [100, 300], [200, 300], [200, 200]]),
+    // new chunck.Chunck(0, [[0,100],   [100, 100], [100, 200], [0, 200]]),
+    // new chunck.Chunck(0, [[100,100], [200, 100], [200, 200], [200, 100]]),
+    // new chunck.Chunck(0, [[200,100], [300, 100], [300, 200], [200, 200]]),
 
-    new chunck.Chunck([[200,0],   [200, 100], [300, 100], [300, 0]]),
-    new chunck.Chunck([[200,100], [200, 200], [300, 200], [300, 100]]),
-    new chunck.Chunck([[200,200], [200, 300], [300, 300], [300, 200]]),
+    // new chunck.Chunck(0, [[0,200],   [100, 200], [100, 300], [0, 300]]),
+    // new chunck.Chunck(0, [[100,200], [200, 200], [200, 300], [100, 300]]),
+    // new chunck.Chunck(0, [[200,200], [300, 200], [300, 300], [200, 300]]),
 ]
 
 // Запуск приложения после загрузки html страницы.
@@ -161,6 +163,7 @@ function app_start(){
 }
 
 function draw_grid(){
+    // debugger;
     for (let i = 0; i < grid_coordinats.length; i++){
         ctx.strokeStyle = grid_coordinats.color;
         let chunck_points = grid_coordinats[i].draw_poins
@@ -176,6 +179,19 @@ function draw_grid(){
     requestAnimationFrame(draw_grid);
 }
 
+function set_grid(new_map) {
+    grid_coordinats = [];
+    // debugger;
+    for (let i = 0; i < new_map.length; i++){
+        let newChunck = new chunck.Chunck(
+            new_map[i].state,
+            new_map[i].coordinates
+        );
+        grid_coordinats.push(newChunck);
+    } 
+}
+
+exports.set_grid = set_grid;
 
 /***/ }),
 
@@ -189,7 +205,8 @@ function draw_grid(){
 "use strict";
 
 
-var chunck = __webpack_require__(/*! ./chunck */ "./js/src/chunck.js");
+// var chunck = require('./chunck');
+var main = __webpack_require__(/*! ./main */ "./js/src/main.js");
 
 // Набор функций получаемых от сервера
 var handlers = {
@@ -208,34 +225,24 @@ function connect(){
 // websocket стартанул.
 function open(event){
     console.log('websocket is open!');
-    console.log(event);
 }
 
 // websocket закрылся.
 function close(event){
     console.log('websocket is close!');
-    console.log(event);
 }
 
 // пришло сообщение по websocket.
 function message(event){
     var data = JSON.parse(event.data);
-    handlers[data['handler_name']](data['data']);
+    handlers[data['handler_name']](JSON.parse(data['data']));
 }
 
 // ------------- incoming ------------------
 // Пришла сетка.
-function set_grid(data){
-    new_grid = data['grid'];
-    // По сути очищаем список.
-    grid_coordinats = [];
-    for (let i = 0; i < new_grid.length; i++){
-        let chunck = new chunck.Chunck(
-            // первым аргументом потом будет id.
-            new_grid[i]
-        );
-        grid_coordinats.append(chunck);
-    } 
+function set_grid(new_map){
+    console.log(new_map);
+    main.set_grid(new_map);
 }
 
 exports.connect = connect;

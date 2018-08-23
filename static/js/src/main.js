@@ -7,17 +7,17 @@ var ctx;
 
 // Заглушки.
 var grid_coordinats = [
-    new chunck.Chunck([[0,0],     [0, 100],   [100, 100], [100, 0]]),
-    new chunck.Chunck([[0,100],   [0, 200],   [100, 200], [100, 100]]),
-    new chunck.Chunck([[0,200],   [0, 300],   [100, 300], [100, 200]]),
+    // new chunck.Chunck(0, [[0, 0],     [100, 0],   [100, 100], [0, 100]]),
+    // new chunck.Chunck(0, [[100, 0],   [200, 0],   [200, 100], [100, 100]]),
+    // new chunck.Chunck(0, [[200, 0],   [300, 0],   [300, 100], [200, 100]]),
 
-    new chunck.Chunck([[100,0],   [100, 100], [200, 100], [200, 0]]),
-    new chunck.Chunck([[100,100], [100, 200], [200, 200], [200, 100]]),
-    new chunck.Chunck([[100,200], [100, 300], [200, 300], [200, 200]]),
+    // new chunck.Chunck(0, [[0,100],   [100, 100], [100, 200], [0, 200]]),
+    // new chunck.Chunck(0, [[100,100], [200, 100], [200, 200], [200, 100]]),
+    // new chunck.Chunck(0, [[200,100], [300, 100], [300, 200], [200, 200]]),
 
-    new chunck.Chunck([[200,0],   [200, 100], [300, 100], [300, 0]]),
-    new chunck.Chunck([[200,100], [200, 200], [300, 200], [300, 100]]),
-    new chunck.Chunck([[200,200], [200, 300], [300, 300], [300, 200]]),
+    // new chunck.Chunck(0, [[0,200],   [100, 200], [100, 300], [0, 300]]),
+    // new chunck.Chunck(0, [[100,200], [200, 200], [200, 300], [100, 300]]),
+    // new chunck.Chunck(0, [[200,200], [300, 200], [300, 300], [200, 300]]),
 ]
 
 // Запуск приложения после загрузки html страницы.
@@ -50,3 +50,16 @@ function draw_grid(){
 
     requestAnimationFrame(draw_grid);
 }
+
+function set_grid(new_map) {
+    grid_coordinats = [];
+    for (let i = 0; i < new_map.length; i++){
+        let newChunck = new chunck.Chunck(
+            new_map[i].state,
+            new_map[i].coordinates
+        );
+        grid_coordinats.push(newChunck);
+    } 
+}
+
+exports.set_grid = set_grid;
