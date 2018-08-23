@@ -109,7 +109,7 @@ class Chunck {
     }
 }
 
-// пока старвый вариант мне нравится больше надо посмотреть ES6
+// TODO: пока старвый вариант мне нравится больше надо посмотреть ES6
 // const _Chunck = Chunck;
 // export { _Chunck as Chunck };
 
@@ -163,7 +163,6 @@ function app_start(){
 }
 
 function draw_grid(){
-    // debugger;
     for (let i = 0; i < grid_coordinats.length; i++){
         ctx.strokeStyle = grid_coordinats.color;
         let chunck_points = grid_coordinats[i].draw_poins
@@ -181,7 +180,6 @@ function draw_grid(){
 
 function set_grid(new_map) {
     grid_coordinats = [];
-    // debugger;
     for (let i = 0; i < new_map.length; i++){
         let newChunck = new chunck.Chunck(
             new_map[i].state,
@@ -205,7 +203,6 @@ exports.set_grid = set_grid;
 "use strict";
 
 
-// var chunck = require('./chunck');
 var main = __webpack_require__(/*! ./main */ "./js/src/main.js");
 
 // Набор функций получаемых от сервера
@@ -241,7 +238,6 @@ function message(event){
 // ------------- incoming ------------------
 // Пришла сетка.
 function set_grid(new_map){
-    console.log(new_map);
     main.set_grid(new_map);
 }
 
