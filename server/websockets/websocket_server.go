@@ -21,7 +21,13 @@ type Server struct {
 	shutdownCh chan bool
 	// inComing  chan string
 	outComing chan string
+
+	// TODO: Этот набор должен браться из core.
+	CoreMetods map[string]interface{}{
+		"setChunckState": core.setChunckState()
+	}
 }
+
 
 func Start() {
 	fmt.Println("Websocket start...")
@@ -94,5 +100,5 @@ func (server *Server) DelClient(client *Client) {
 }
 
 func (server *Server) IncomingMessage(client *Client, message *IncomingMessage) {
-	fmt.Println("Пришло сообщение от пользователя.")
+	CoreMetods[message.HandlerName](message.Data)
 }

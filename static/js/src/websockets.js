@@ -2,6 +2,8 @@
 
 var main = require('./main');
 
+var ws
+
 // Набор функций получаемых от сервера
 var handlers = {
     'set_grid': set_grid
@@ -10,7 +12,7 @@ var handlers = {
 // Пошла работа с websockets
 function connect(){
     // Здесь происходит падение если не можем подключится, надо красиво обработать...
-    var ws = new WebSocket('ws://127.0.0.1:8081/appgame');
+    ws = new WebSocket('ws://127.0.0.1:8081/appgame');
     ws.onopen = open;
     ws.onclose = close;
     ws.onmessage = message;
@@ -38,4 +40,15 @@ function set_grid(new_map){
     main.set_grid(new_map);
 }
 
+// Отправляем запрос на постановку символа в чанк
+function set_chunck_state(chunck_id){
+    message = {
+        'handler_name': 'setChunckState',
+        'data': chunck_id.toString()
+    }
+
+    ws.send(JSON.stringify(message));
+}
+
 exports.connect = connect;
+exports.set_chunck_state = set_chunck_state;
