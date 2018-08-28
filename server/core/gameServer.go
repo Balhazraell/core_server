@@ -84,3 +84,8 @@ func (server *gameServer) NewConnect(roomId int) (int, []byte) {
 
 	return client.Id, gameMap
 }
+
+// Интерфейсы для получения данных от
+func SetChunckState(clientID int, chuncID int) {
+	fmt.Printf("Клиент %v выбрал чанкт %v \n", clientID, chuncID)
+}

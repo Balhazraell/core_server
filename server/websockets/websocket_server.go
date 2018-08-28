@@ -13,6 +13,10 @@ import (
 // пока так, но потом надо сделать отдельную инициализацию...
 var AppServer Server
 
+type ChunckStateStructure struct {
+	ChunckID int `json:"chunck_id"`
+}
+
 type Server struct {
 	// TODO: Непонятно зачем нужен pattern в данном случае.
 	clients map[int]*Client
@@ -22,12 +26,8 @@ type Server struct {
 	// inComing  chan string
 	outComing chan string
 
-	// TODO: Этот набор должен браться из core.
-	CoreMetods map[string]interface{}{
-		"setChunckState": core.setChunckState()
-	}
+	CoreMetods map[string]func(int, []byte)
 }
-
 
 func Start() {
 	fmt.Println("Websocket start...")
@@ -36,11 +36,16 @@ func Start() {
 	// inComing := make(chan string)
 	outComing := make(chan string)
 
+	CoreMetods := map[string]func(int, []byte){
+		"setChunckState": setChunckState,
+	}
+
 	AppServer = Server{
 		clients,
 		shutdownCh,
 		// inComing,
 		outComing,
+		CoreMetods,
 	}
 	go AppServer.listen()
 }
@@ -100,5 +105,22 @@ func (server *Server) DelClient(client *Client) {
 }
 
 func (server *Server) IncomingMessage(client *Client, message *IncomingMessage) {
-	CoreMetods[message.HandlerName](message.Data)
+	// скорее всего надо не сразу дергать методы игрового сервера, а нормально распарсить их тут и
+	// вызывать конкретные методы с конкретными аргументами.
+	server.CoreMetods[message.HandlerName](client.id, message.Data)
+}
+
+func setChunckState(clientID int, data []byte) {
+	// var chunckStateStructure ChunckStateStructure
+
+	// json.Unmarshal(data, &chunckStateStructure)
+
+	fmt.Println(data)
+
+	// chunckID, ok := data[0].(int)
+
+	// if !ok {
+	// 	fmt.Println("Не смогли распарсить данные setChunckState")
+	// }
+	// core.SetChunckState(clientID, chunckID)
 }

@@ -42,9 +42,13 @@ function set_grid(new_map){
 
 // Отправляем запрос на постановку символа в чанк
 function set_chunck_state(chunck_id){
-    message = {
+    var data = {
+        'chunck_id': chunck_id.toString()
+    }
+
+    var message = {
         'handler_name': 'setChunckState',
-        'data': chunck_id.toString()
+        'data': JSON.stringify(data)
     }
 
     ws.send(JSON.stringify(message));
