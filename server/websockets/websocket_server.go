@@ -1,6 +1,7 @@
 package websockets
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"runtime"
@@ -26,7 +27,7 @@ type Server struct {
 	// inComing  chan string
 	outComing chan string
 
-	CoreMetods map[string]func(int, []byte)
+	CoreMetods map[string]func(int, string)
 }
 
 func Start() {
@@ -36,7 +37,7 @@ func Start() {
 	// inComing := make(chan string)
 	outComing := make(chan string)
 
-	CoreMetods := map[string]func(int, []byte){
+	CoreMetods := map[string]func(int, string){
 		"setChunckState": setChunckState,
 	}
 
@@ -107,15 +108,14 @@ func (server *Server) DelClient(client *Client) {
 func (server *Server) IncomingMessage(client *Client, message *IncomingMessage) {
 	// скорее всего надо не сразу дергать методы игрового сервера, а нормально распарсить их тут и
 	// вызывать конкретные методы с конкретными аргументами.
+
 	server.CoreMetods[message.HandlerName](client.id, message.Data)
 }
 
-func setChunckState(clientID int, data []byte) {
-	// var chunckStateStructure ChunckStateStructure
-
-	// json.Unmarshal(data, &chunckStateStructure)
-
-	fmt.Println(data)
+func setChunckState(clientID int, data string) {
+	var chunckStateStructure ChunckStateStructure
+	json.Unmarshal([]byte(data), &chunckStateStructure)
+	fmt.Println(chunckStateStructure.ChunckID)
 
 	// chunckID, ok := data[0].(int)
 

@@ -18,6 +18,12 @@ type IncomingMessage struct {
 	Data        string `json:"data"`
 }
 
+type OutcomingMessage struct {
+	// По ходу это не входящее сообщение а просто формат передачи сообщений, один и туда и обратно!
+	HandlerName string `json:"handler_name"`
+	Data        string `json:"data"`
+}
+
 type Client struct {
 	id int // Должен браться из базы в соответствии с id пользователя в базе.
 	ws *websocket.Conn
@@ -54,27 +60,13 @@ func (client *Client) Listen() {
 
 func (client *Client) SetGameMap(gameMap []byte) {
 	// Получили карту - отправляем её пользователю.
-	newMessage := IncomingMessage{
+	newMessage := OutcomingMessage{
 		HandlerName: "set_grid",
 		Data:        string(gameMap),
 	}
 
 	websocket.JSON.Send(client.ws, newMessage)
 }
-
-// func (client *Client) listenWrite() {
-// 	//
-// 	defer func() {
-// 		fmt.Printf("listenWrite у клиента %d работу закончил \n", client.id)
-// 	}()
-
-// 	for {
-// 		select {
-// 		case <-client.shutdownWrite:
-// 			return
-// 		}
-// 	}
-// }
 
 func (client *Client) listenRead() {
 	defer func() {
@@ -93,7 +85,7 @@ func (client *Client) listenRead() {
 				// client.shutdownWrite <- true
 				return
 			} else if err != nil {
-				fmt.Printf("Проблема чтения сообщения от клиента \n: %v", err)
+				fmt.Printf("Проблема чтения сообщения от клиента : %v \n", err)
 				// client.shutdownWrite <- true
 				return
 			} else {
