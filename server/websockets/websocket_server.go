@@ -15,7 +15,7 @@ import (
 var AppServer Server
 
 type ChunckStateStructure struct {
-	ChunckID int `json:"chunck_id"`
+	ChunckID int `json:"id"`
 }
 
 type Server struct {
@@ -114,7 +114,12 @@ func (server *Server) IncomingMessage(client *Client, message *IncomingMessage) 
 
 func setChunckState(clientID int, data string) {
 	var chunckStateStructure ChunckStateStructure
-	json.Unmarshal([]byte(data), &chunckStateStructure)
+	err := json.Unmarshal([]byte(data), &chunckStateStructure)
+
+	if err != nil {
+		fmt.Println("Ошибка парсинга json в setChunckState %v", err)
+	}
+
 	fmt.Println(chunckStateStructure.ChunckID)
 
 	// chunckID, ok := data[0].(int)
