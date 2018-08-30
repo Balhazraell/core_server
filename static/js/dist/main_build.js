@@ -97,8 +97,8 @@
 
 
 class Chunck {
-    constructor(state, points_list){
-        this.id = -1;
+    constructor(id, state, points_list){
+        this.id = id;
         this.state = state;
         this.draw_poins = points_list;
         
@@ -136,19 +136,19 @@ var MousManager;
 var selectChunck;
 
 // Заглушки.
-var grid_coordinats = [
-    // new chunck.Chunck(0, [[0, 0],     [100, 0],   [100, 100], [0, 100]]),
-    // new chunck.Chunck(0, [[100, 0],   [200, 0],   [200, 100], [100, 100]]),
-    // new chunck.Chunck(0, [[200, 0],   [300, 0],   [300, 100], [200, 100]]),
+var grid_coordinats = {
+    // [0]: new chunck.Chunck(0, [[0, 0],     [100, 0],   [100, 100], [0, 100]]),
+    // [1]:new chunck.Chunck(0, [[100, 0],   [200, 0],   [200, 100], [100, 100]]),
+    // [2]:new chunck.Chunck(0, [[200, 0],   [300, 0],   [300, 100], [200, 100]]),
 
-    // new chunck.Chunck(0, [[0,100],   [100, 100], [100, 200], [0, 200]]),
-    // new chunck.Chunck(0, [[100,100], [200, 100], [200, 200], [200, 100]]),
-    // new chunck.Chunck(0, [[200,100], [300, 100], [300, 200], [200, 200]]),
+    // [3]:new chunck.Chunck(0, [[0,100],   [100, 100], [100, 200], [0, 200]]),
+    // [4]:new chunck.Chunck(0, [[100,100], [200, 100], [200, 200], [200, 100]]),
+    // [5]:new chunck.Chunck(0, [[200,100], [300, 100], [300, 200], [200, 200]]),
 
-    // new chunck.Chunck(0, [[0,200],   [100, 200], [100, 300], [0, 300]]),
-    // new chunck.Chunck(0, [[100,200], [200, 200], [200, 300], [100, 300]]),
-    // new chunck.Chunck(0, [[200,200], [300, 200], [300, 300], [200, 300]]),
-]
+    // [6]:new chunck.Chunck(0, [[0,200],   [100, 200], [100, 300], [0, 300]]),
+    // [7]:new chunck.Chunck(0, [[100,200], [200, 200], [200, 300], [100, 300]]),
+    // [8]:new chunck.Chunck(0, [[200,200], [300, 200], [300, 300], [200, 300]]),
+}
 
 // Запуск приложения после загрузки html страницы.
 if (document.readyState != 'loading'){
@@ -174,9 +174,12 @@ function game_loop(){
 }
 
 function draw_grid(){
-    for (let i = 0; i < grid_coordinats.length; i++){
-        ctx.strokeStyle = grid_coordinats[i].color;
-        let chunck_points = grid_coordinats[i].draw_poins
+    // Очищаем канвас.
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    for (var key in grid_coordinats){
+        ctx.strokeStyle = grid_coordinats[key].color;
+        let chunck_points = grid_coordinats[key].draw_poins
         ctx.beginPath();
         ctx.moveTo(chunck_points[0][0], chunck_points[0][1]);
         for (let pos_index = 1; pos_index < chunck_points.length; pos_index++){
@@ -184,38 +187,69 @@ function draw_grid(){
         }
         ctx.closePath();
         ctx.stroke();
-    }
 
-    
+        if (grid_coordinats[key].state == 1) {
+            //Надо нарисовать крестик
+            let draw_poins = grid_coordinats[key].draw_poins
+            let centerX = draw_poins[0][0] + 50
+            let centerY = draw_poins[0][1] + 50
+
+            ctx.beginPath();
+            ctx.moveTo(centerX, centerY);
+            ctx.lineTo(centerX - 25, centerY - 25)
+            ctx.lineTo(centerX, centerY)
+
+            ctx.lineTo(centerX + 25, centerY - 25)
+            ctx.lineTo(centerX, centerY)
+
+            ctx.lineTo(centerX + 25, centerY + 25)
+            ctx.lineTo(centerX, centerY)
+
+            ctx.lineTo(centerX - 25, centerY + 25)
+            ctx.lineTo(centerX, centerY)
+            
+            ctx.stroke();
+
+        } else if (grid_coordinats[key].state == 2){
+            let draw_poins = grid_coordinats[key].draw_poins
+            let centerX = draw_poins[0][0] + 50
+            let centerY = draw_poins[0][1] + 50
+
+            ctx.beginPath();
+            ctx.arc(centerX,centerY, 25, 0, Math.PI*2, true);
+            ctx.stroke();
+        }
+    }
 }
 
 function set_grid(new_map) {
     grid_coordinats = [];
-    for (let i = 0; i < new_map.length; i++){
+    for (var key in new_map){
         let newChunck = new chunck.Chunck(
-            new_map[i].state,
-            new_map[i].coordinates
+            new_map[key].id,
+            new_map[key].state,
+            new_map[key].coordinates
         );
 
-        grid_coordinats.push(newChunck);
+        grid_coordinats[key] = newChunck;
     } 
 }
 
 function set_chuncks_color(){
     // TODO: интересно, что правильнее, собрать информацию о том, с каким чанком мы пересечены и после
     // пробегатся - задавая цвет, или все делать в одном цикле???
-    for (let i = 0; i < grid_coordinats.length; i++){
-        let is_collision = check_collision(grid_coordinats[i])
-        selectChunck = grid_coordinats[i]
-
+    for (var key in grid_coordinats){
+        let is_collision = check_collision(grid_coordinats[key])
+        
         if (is_collision){
-            if (grid_coordinats[i].state == 0){
-                grid_coordinats[i].color = grid_coordinats[i].positive_color
+            selectChunck = grid_coordinats[key]
+            if (grid_coordinats[key].state == 0){
+                grid_coordinats[key].color = grid_coordinats[key].positive_color
             } else{
-                grid_coordinats[i].color = grid_coordinats[i].negative_color
+                grid_coordinats[key].color = grid_coordinats[key].negative_color
             }
         } else {
-            grid_coordinats[i].color = grid_coordinats[i].normal_color
+            grid_coordinats[key].color = grid_coordinats[key].normal_color
         }
     }
 } 
@@ -346,7 +380,7 @@ function set_grid(new_map){
 // Отправляем запрос на постановку символа в чанк
 function set_chunck_state(chunck_id){
     var data = {
-        'id': chunck_id
+        'chunck_id': chunck_id
     }
 
     var message = {

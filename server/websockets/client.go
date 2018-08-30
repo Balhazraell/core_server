@@ -40,12 +40,7 @@ func (client *Client) Shutdown() {
 
 func (client *Client) Listen() {
 	var wg sync.WaitGroup
-	// wg.Add(2)
 	wg.Add(1)
-	// go func() {
-	// 	defer wg.Done()
-	// 	client.listenWrite()
-	// }()
 
 	go func() {
 		defer wg.Done()
@@ -60,10 +55,13 @@ func (client *Client) Listen() {
 
 func (client *Client) SetGameMap(gameMap []byte) {
 	// Получили карту - отправляем её пользователю.
+	fmt.Printf("Пытаемся задать карту")
 	newMessage := OutcomingMessage{
 		HandlerName: "set_grid",
 		Data:        string(gameMap),
 	}
+
+	fmt.Printf("newMessage сформирован и готовится к отправке.")
 
 	websocket.JSON.Send(client.ws, newMessage)
 }
@@ -72,6 +70,9 @@ func (client *Client) listenRead() {
 	defer func() {
 		fmt.Printf("listenRead у клиента %d работу закончил \n", client.id)
 	}()
+
+	// TODO: убрать это отсюда.
+	// api.API.ClientConnectionChl <- ClientMaxId
 
 	for {
 		select {

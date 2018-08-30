@@ -43,7 +43,7 @@ function set_grid(new_map){
 // Отправляем запрос на постановку символа в чанк
 function set_chunck_state(chunck_id){
     var data = {
-        'id': chunck_id
+        'chunck_id': chunck_id
     }
 
     var message = {

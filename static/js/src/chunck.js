@@ -1,8 +1,8 @@
 'use strict';
 
 class Chunck {
-    constructor(state, points_list){
-        this.id = -1;
+    constructor(id, state, points_list){
+        this.id = id;
         this.state = state;
         this.draw_poins = points_list;
         

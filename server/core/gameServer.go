@@ -2,6 +2,8 @@ package core
 
 import (
 	"fmt"
+
+	"../api"
 )
 
 // В первой итерации вебсокеты будут передавать сообщения на прямую в gameServer.
@@ -9,12 +11,9 @@ import (
 
 var GameServer gameServer
 
-// Временное решение отвечающее за увеличение id пользователей подключившихся к приложению.
-var clientMaxId int
-
 type Client struct {
-	Id     int
-	RoomId map[int]*Room
+	Id   int
+	Room *Room
 }
 
 type gameServer struct {
@@ -39,7 +38,7 @@ func GameServerStart() {
 
 	// создадим пока одну комнату, для тестирования.
 	room1 := StartNewRoom(666)
-	GameServer.Rooms[room1.Id] = room1
+	GameServer.Rooms[room1.ID] = room1
 }
 
 func Stop() {
@@ -48,10 +47,10 @@ func Stop() {
 
 func (server *gameServer) loop() {
 	defer func() {
-		fmt.Printf("Игровой сервер закончил свою работу.")
+		fmt.Println("Игровой сервер закончил свою работу.")
 	}()
 
-	fmt.Printf("Игровой сервер запущен.")
+	fmt.Println("Игровой сервер запущен.")
 
 	for {
 		// Что-нибудь что делают всякие сервера.
@@ -59,33 +58,55 @@ func (server *gameServer) loop() {
 		select {
 		case <-server.shutdownLoop:
 			return
+		case clietnID := <-api.API.ClientConnectionChl:
+			server.NewConnect(clietnID)
+		case clientID := <-api.API.ClientDisconnectChl:
+			fmt.Println("Клиент %v отключился", clientID)
+		case chunckStateData := <-api.API.SetChunckStateChl:
+			server.SetChunckState(
+				chunckStateData.ClientID,
+				chunckStateData.ChuncID,
+			)
 		}
 	}
 }
 
-func (server *gameServer) NewConnect(roomId int) (int, []byte) {
+func (server *gameServer) NewConnect(clietnId int) {
 	// сейчас пока буду закидывать в первую комнату.
 	// Подключаем по id комнаты в которую он входит.
 	// TODO: ЭТОНАДО РАЗДЕЛИТЬ НА ДВЕ ФУНКЦИИ!!!!
 	// подключение нового пользователя и получение им карты это два разных события.
 
+	fmt.Println("На сервер пришел новый пользователь")
+
+	room := GameServer.Rooms[666]
+
 	client := Client{
-		clientMaxId,
-		make(map[int]*Room),
+		clietnId,
+		room,
 	}
 
-	client.RoomId[roomId] = GameServer.Rooms[roomId]
 	GameServer.Clients[client.Id] = &client
 
-	clientMaxId++
+	newClientIsConnectedStruct := api.NewClientIsConnectedStruct{
+		clietnId,
+		room.ClientConnect(&client),
+	}
 
-	// так как пользователь подключился впервый раз, сразу отдадим ему сетку.
-	gameMap := GameServer.Rooms[roomId].ClientConnect(&client)
-
-	return client.Id, gameMap
+	api.API.NewClientIsConnectedChl <- newClientIsConnectedStruct
 }
 
 // Интерфейсы для получения данных от
-func SetChunckState(clientID int, chuncID int) {
-	fmt.Printf("Клиент %v выбрал чанкт %v \n", clientID, chuncID)
+func (server *gameServer) SetChunckState(clientID int, chuncID int) {
+	fmt.Println("На сервер пришело сообщение об обновлении состояния комнаты")
+	server.Clients[clientID].Room.SetChunckState(clientID, chuncID)
+}
+
+func (server *gameServer) UpdateClientsMap(gameMap []byte, clientsIDs []int) {
+	updateClientsMapStruct := api.UpdateClientsMapStruct{
+		gameMap,
+		clientsIDs,
+	}
+
+	api.API.UpdateClientsMapChl <- updateClientsMapStruct
 }

@@ -8,14 +8,17 @@ import (
 
 	"golang.org/x/net/websocket"
 
-	"../core"
+	"../api"
 )
 
 // пока так, но потом надо сделать отдельную инициализацию...
 var AppServer Server
 
+// Когда клиент подсоединяется - должен передоваться его id...
+var ClientMaxId int
+
 type ChunckStateStructure struct {
-	ChunckID int `json:"id"`
+	ChunckID int `json:"chunck_id"`
 }
 
 type Server struct {
@@ -62,12 +65,7 @@ func (server *Server) listen() {
 			fmt.Println("Websocker close...")
 		}()
 
-		client := server.newClient(ws)
-		server.clients[client.id] = client
-		fmt.Println("New client is connected")
-		fmt.Printf("%v goroutine is running \n", runtime.NumGoroutine())
-		client.Listen()
-
+		server.newClient(ws)
 	}
 
 	http.Handle("/appgame", websocket.Handler(onConnected))
@@ -77,26 +75,38 @@ func (server *Server) listen() {
 			return
 		case <-server.outComing:
 			fmt.Println("Необходимо отослать сообщение пользователям.")
+		case updateClientsMapStruct := <-api.API.UpdateClientsMapChl:
+			server.updateClientsMap(
+				updateClientsMapStruct.GameMap,
+				updateClientsMapStruct.ClientsIDs,
+			)
+		case connectedClientData := <-api.API.NewClientIsConnectedChl:
+			server.setClietMap(
+				connectedClientData.ClientID,
+				connectedClientData.ClientMap,
+			)
 		}
 	}
 }
 
-func (server *Server) newClient(ws *websocket.Conn) *Client {
+func (server *Server) newClient(ws *websocket.Conn) {
 	if ws == nil {
 		panic("ws cannot be nil")
 	}
 
-	// сделать через две разные функции...
-	// Блять... вообще отдачу карты должна инициировать комната...
-	clientId, gameMap := core.GameServer.NewConnect(666)
 	ch := make(chan string, channalBufSize)
 	shutdownRead := make(chan bool)
-	// shutdownWrite := make(chan bool)
-	client := &Client{clientId, ws, ch, shutdownRead}
+	client := &Client{ClientMaxId, ws, ch, shutdownRead}
 
-	client.SetGameMap(gameMap)
+	server.clients[client.id] = client
+	fmt.Println("New client is connected")
+	fmt.Printf("%v goroutine is running \n", runtime.NumGoroutine())
 
-	return client
+	// Создали канал, запустили его, теперь можно и игровому серверпусказать что подключился игрок.
+	api.API.ClientConnectionChl <- ClientMaxId
+	ClientMaxId++
+	// надо наверно сделать так что бы вызов этого метода не тормазил работу метода
+	client.Listen()
 }
 
 func (server *Server) DelClient(client *Client) {
@@ -120,12 +130,20 @@ func setChunckState(clientID int, data string) {
 		fmt.Println("Ошибка парсинга json в setChunckState %v", err)
 	}
 
-	fmt.Println(chunckStateStructure.ChunckID)
+	setChunckStateStruct := api.SetChunckStateStruct{
+		clientID,
+		chunckStateStructure.ChunckID,
+	}
 
-	// chunckID, ok := data[0].(int)
+	api.API.SetChunckStateChl <- setChunckStateStruct
+}
 
-	// if !ok {
-	// 	fmt.Println("Не смогли распарсить данные setChunckState")
-	// }
-	// core.SetChunckState(clientID, chunckID)
+func (server *Server) updateClientsMap(gameMap []byte, clientsIDs []int) {
+	for i := 0; i < len(clientsIDs); i++ {
+		server.setClietMap(clientsIDs[i], gameMap)
+	}
+}
+
+func (server *Server) setClietMap(clietID int, clientMap []byte) {
+	server.clients[clietID].SetGameMap(clientMap)
 }
