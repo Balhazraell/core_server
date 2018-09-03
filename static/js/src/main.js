@@ -158,7 +158,13 @@ function check_collision(cunck_for_check){
 
 function set_chunck_state(){
     if(selectChunck != undefined){
-        websocket.set_chunck_state(selectChunck.id)
+        if (selectChunck.state == 0){
+            websocket.set_chunck_state(selectChunck.id)
+        } else {
+            // Защита на клиенте.
+            send_error("Нельзя изменить значение!");
+        }
+        
     }
 }
 

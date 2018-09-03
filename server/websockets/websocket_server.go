@@ -115,6 +115,7 @@ func (server *Server) newClient(ws *websocket.Conn) {
 }
 
 func (server *Server) DelClient(client *Client) {
+	api.API.ClientDisconnectChl <- client.id
 	delete(AppServer.clients, client.id)
 	fmt.Printf("Client whith id %v is deleted \n", client.id)
 	fmt.Printf("%v goroutine is running \n", runtime.NumGoroutine())
@@ -144,13 +145,20 @@ func setChunckState(clientID int, data string) {
 }
 
 func (server *Server) updateClientsMap(gameMap []byte, clientsIDs []int) {
+	// TODO: необходимы тесты на то корректность удаление данных и отработку даже с некорретными пришедшими данными.
+	// Типа если пришел id которого нет в списке id-шников.
 	for i := 0; i < len(clientsIDs); i++ {
 		server.setClietMap(clientsIDs[i], gameMap)
 	}
 }
 
 func (server *Server) setClietMap(clietID int, clientMap []byte) {
-	server.clients[clietID].SetGameMap(clientMap)
+	client, ok := server.clients[clietID]
+	if ok {
+		client.SetGameMap(clientMap)
+	} else {
+		fmt.Printf("Err: Попытка задать карту клиенту которого уже нет: %v. \n", clietID)
+	}
 }
 
 func (server *Server) sendErrorToСlient(clientID int, message string) {

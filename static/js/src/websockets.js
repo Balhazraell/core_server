@@ -7,7 +7,7 @@ var ws
 // Набор функций получаемых от сервера
 var handlers = {
     'set_grid': set_grid,
-    'send_error': send_error
+    'send_error': send_error,
 };
 
 // Пошла работа с websockets

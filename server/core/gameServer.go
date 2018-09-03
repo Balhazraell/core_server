@@ -59,11 +59,11 @@ func (server *gameServer) loop() {
 		case <-server.shutdownLoop:
 			return
 		case clietnID := <-api.API.ClientConnectionChl:
-			server.NewConnect(clietnID)
+			server.newConnect(clietnID)
 		case clientID := <-api.API.ClientDisconnectChl:
-			fmt.Println("Клиент %v отключился", clientID)
+			server.clientDisconnect(clientID)
 		case chunckStateData := <-api.API.SetChunckStateChl:
-			server.SetChunckState(
+			server.setChunckState(
 				chunckStateData.ClientID,
 				chunckStateData.ChuncID,
 			)
@@ -71,7 +71,7 @@ func (server *gameServer) loop() {
 	}
 }
 
-func (server *gameServer) NewConnect(clietnId int) {
+func (server *gameServer) newConnect(clietnId int) {
 	// сейчас пока буду закидывать в первую комнату.
 	// Подключаем по id комнаты в которую он входит.
 	// TODO: ЭТОНАДО РАЗДЕЛИТЬ НА ДВЕ ФУНКЦИИ!!!!
@@ -97,7 +97,7 @@ func (server *gameServer) NewConnect(clietnId int) {
 }
 
 // Интерфейсы для получения данных от
-func (server *gameServer) SetChunckState(clientID int, chuncID int) {
+func (server *gameServer) setChunckState(clientID int, chuncID int) {
 	fmt.Println("На сервер пришело сообщение об обновлении состояния комнаты")
 	server.Clients[clientID].Room.SetChunckState(clientID, chuncID)
 }
@@ -118,4 +118,15 @@ func (server *gameServer) SendErrorToСlient(client_id int, message string) {
 	}
 
 	api.API.SendErrorToСlientChl <- sendErrorToСlientStruct
+}
+
+func (server *gameServer) clientDisconnect(clientID int) {
+	client, ok := server.Clients[clientID]
+	if ok {
+		fmt.Printf("Удаляем клиента с сервера: id=%v. \n", clientID)
+		client.Room.ClientDisconnect(clientID)
+		delete(server.Clients, clientID)
+	} else {
+		fmt.Printf("Попытка удалить клиента корого уже нет: id=%v. \n", clientID)
+	}
 }

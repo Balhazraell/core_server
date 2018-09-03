@@ -56,13 +56,13 @@ func (client *Client) Listen() {
 
 func (client *Client) SetGameMap(gameMap []byte) {
 	// Получили карту - отправляем её пользователю.
-	fmt.Printf("Пытаемся задать карту")
+	fmt.Printf("Пытаемся задать карту клиенту с id = %v.\n ", client.id)
 	newMessage := OutcomingMessage{
 		HandlerName: "set_grid",
 		Data:        string(gameMap),
 	}
 
-	fmt.Printf("newMessage сформирован и готовится к отправке.")
+	fmt.Printf("newMessage сформирован и готовится к отправке.\n")
 
 	websocket.JSON.Send(client.ws, newMessage)
 }

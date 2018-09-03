@@ -88,11 +88,6 @@ func (room *Room) ClientConnect(client *Client) []byte {
 	return gameMap
 }
 
-func (room *Room) ClientDisconnect(client *Client) {
-	fmt.Printf("Из комнта %v вышел клиент с id = v% \n", room.ID, client.Id)
-	delete(room.clients, client.Id)
-}
-
 func (room *Room) loop() {
 	defer func() {
 		fmt.Printf("Комната с id=v% закончила работу. \n", room.ID)
@@ -129,7 +124,7 @@ func (room *Room) SetChunckState(client_id int, chunk_id int) {
 
 		room.updateClientsMap()
 	} else {
-		fmt.Printf("Попытка изменить значение в поле с изменненым значеним клиентом с id=%v.", client_id)
+		fmt.Printf("Err: Попытка изменить значение в поле с изменненым значеним клиентом с id=%v.", client_id)
 		GameServer.SendErrorToСlient(client_id, "Нельзя изменить значение!")
 	}
 }
@@ -148,4 +143,14 @@ func (room *Room) updateClientsMap() {
 	}
 
 	GameServer.UpdateClientsMap(gameMap, clientsIDs)
+}
+
+func (room *Room) ClientDisconnect(clientID int) {
+	_, ok := room.clients[clientID]
+	if ok {
+		fmt.Printf("Удаляем клиента id=%v из комнаты id=%v. \n", clientID, room.ID)
+		delete(room.clients, clientID)
+	} else {
+		fmt.Printf("Попытка удалить клиента из комнаты, корого уже нет: id=%v. \n", clientID)
+	}
 }
