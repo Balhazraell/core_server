@@ -12,6 +12,7 @@ func init() {
 		// websockets
 		make(chan UpdateClientsMapStruct),
 		make(chan NewClientIsConnectedStruct),
+		make(chan SendErrorToСlientStruct),
 	}
 }
 
@@ -24,6 +25,7 @@ type websocketsCoreAPI struct {
 	//websockets
 	UpdateClientsMapChl     chan UpdateClientsMapStruct
 	NewClientIsConnectedChl chan NewClientIsConnectedStruct
+	SendErrorToСlientChl    chan SendErrorToСlientStruct
 }
 
 // core
@@ -41,4 +43,9 @@ type UpdateClientsMapStruct struct {
 type NewClientIsConnectedStruct struct {
 	ClientID  int
 	ClientMap []byte
+}
+
+type SendErrorToСlientStruct struct {
+	ClientID int
+	Message  string
 }

@@ -85,6 +85,11 @@ func (server *Server) listen() {
 				connectedClientData.ClientID,
 				connectedClientData.ClientMap,
 			)
+		case sendErrorToСlientStruct := <-api.API.SendErrorToСlientChl:
+			server.sendErrorToСlient(
+				sendErrorToСlientStruct.ClientID,
+				sendErrorToСlientStruct.Message,
+			)
 		}
 	}
 }
@@ -146,4 +151,8 @@ func (server *Server) updateClientsMap(gameMap []byte, clientsIDs []int) {
 
 func (server *Server) setClietMap(clietID int, clientMap []byte) {
 	server.clients[clietID].SetGameMap(clientMap)
+}
+
+func (server *Server) sendErrorToСlient(clientID int, message string) {
+	server.clients[clientID].SendError(message)
 }

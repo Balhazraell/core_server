@@ -135,6 +135,8 @@ var ctx;
 var MousManager;
 var selectChunck;
 
+var MessageIntervalID = null;
+
 // Заглушки.
 var grid_coordinats = {
     // [0]: new chunck.Chunck(0, [[0, 0],     [100, 0],   [100, 100], [0, 100]]),
@@ -287,8 +289,32 @@ function set_chunck_state(){
     }
 }
 
+
+// Необходимо вывести ошибку.
+function send_error(message=""){
+    var messageLabel = document.getElementById('messageLabel');
+
+    if (MessageIntervalID != null && message == ""){
+        clearInterval(MessageIntervalID);
+        MessageIntervalID = null;
+        messageLabel.innerText = "";
+        return
+    }
+
+    if (message != "" && MessageIntervalID != null){
+        clearInterval(MessageIntervalID);
+        MessageIntervalID = null;
+        messageLabel.innerText = "";
+    }
+
+    messageLabel.innerText = message;
+
+    MessageIntervalID = setInterval(send_error, 5000);
+}
+
 exports.set_grid = set_grid;
 exports.set_chunck_state = set_chunck_state;
+exports.send_error = send_error;
 
 /***/ }),
 
@@ -343,7 +369,8 @@ var ws
 
 // Набор функций получаемых от сервера
 var handlers = {
-    'set_grid': set_grid
+    'set_grid': set_grid,
+    'send_error': send_error
 };
 
 // Пошла работа с websockets
@@ -375,6 +402,11 @@ function message(event){
 // Пришла сетка.
 function set_grid(new_map){
     main.set_grid(new_map);
+}
+
+// Пришла ошибка от сервера.
+function send_error(message){
+    main.send_error(message);
 }
 
 // Отправляем запрос на постановку символа в чанк

@@ -118,15 +118,20 @@ func (room *Room) loop() {
 }
 
 func (room *Room) SetChunckState(client_id int, chunk_id int) {
-	fmt.Println("Задано состояние для чанка.")
-	room.Map[chunk_id].State = room.GameState
-	if room.GameState == 1 {
-		room.GameState = 2
-	} else {
-		room.GameState = 1
-	}
+	if room.Map[chunk_id].State == 0 {
+		room.Map[chunk_id].State = room.GameState
 
-	room.updateClientsMap()
+		if room.GameState == 1 {
+			room.GameState = 2
+		} else {
+			room.GameState = 1
+		}
+
+		room.updateClientsMap()
+	} else {
+		fmt.Printf("Попытка изменить значение в поле с изменненым значеним клиентом с id=%v.", client_id)
+		GameServer.SendErrorToСlient(client_id, "Нельзя изменить значение!")
+	}
 }
 
 func (room *Room) updateClientsMap() {

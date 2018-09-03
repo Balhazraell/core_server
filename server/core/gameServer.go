@@ -110,3 +110,12 @@ func (server *gameServer) UpdateClientsMap(gameMap []byte, clientsIDs []int) {
 
 	api.API.UpdateClientsMapChl <- updateClientsMapStruct
 }
+
+func (server *gameServer) SendErrorToСlient(client_id int, message string) {
+	sendErrorToСlientStruct := api.SendErrorToСlientStruct{
+		client_id,
+		message,
+	}
+
+	api.API.SendErrorToСlientChl <- sendErrorToСlientStruct
+}

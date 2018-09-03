@@ -6,7 +6,8 @@ var ws
 
 // Набор функций получаемых от сервера
 var handlers = {
-    'set_grid': set_grid
+    'set_grid': set_grid,
+    'send_error': send_error
 };
 
 // Пошла работа с websockets
@@ -38,6 +39,11 @@ function message(event){
 // Пришла сетка.
 function set_grid(new_map){
     main.set_grid(new_map);
+}
+
+// Пришла ошибка от сервера.
+function send_error(message){
+    main.send_error(message);
 }
 
 // Отправляем запрос на постановку символа в чанк

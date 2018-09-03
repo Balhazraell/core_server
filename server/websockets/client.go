@@ -1,6 +1,7 @@
 package websockets
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"sync"
@@ -94,4 +95,19 @@ func (client *Client) listenRead() {
 			}
 		}
 	}
+}
+
+func (client *Client) SendError(message string) {
+	jsonMessage, err := json.Marshal(message)
+
+	if err != nil {
+		fmt.Printf("При формировнии json при отправки сообщения об ошибке произошла ошибка %v \n", err)
+	}
+
+	newMessage := OutcomingMessage{
+		HandlerName: "send_error",
+		Data:        string(jsonMessage),
+	}
+
+	websocket.JSON.Send(client.ws, newMessage)
 }
