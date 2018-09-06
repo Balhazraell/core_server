@@ -36,9 +36,12 @@ func GameServerStart() {
 
 	go GameServer.loop()
 
-	// создадим пока одну комнату, для тестирования.
-	room1 := StartNewRoom(666)
+	// создадим несколько комнат, для тестирования.
+	room1 := StartNewRoom(1)
+	room2 := StartNewRoom(2)
 	GameServer.Rooms[room1.ID] = room1
+	GameServer.Rooms[room2.ID] = room2
+
 }
 
 func Stop() {
@@ -67,6 +70,11 @@ func (server *gameServer) loop() {
 				chunckStateData.ClientID,
 				chunckStateData.ChuncID,
 			)
+		case changeRoomStructureData := <-api.API.ChangeRoomChl:
+			server.changeRoom(
+				changeRoomStructureData.ClientID,
+				changeRoomStructureData.RoomID,
+			)
 		}
 	}
 }
@@ -79,7 +87,10 @@ func (server *gameServer) newConnect(clietnId int) {
 
 	fmt.Println("На сервер пришел новый пользователь")
 
-	room := GameServer.Rooms[666]
+	room, ok := server.Rooms[1]
+	if !ok {
+		fmt.Printf("Err: Попытка присоединится к комнате которойнет: Клиет - %v", clietnId)
+	}
 
 	client := Client{
 		clietnId,
@@ -91,6 +102,7 @@ func (server *gameServer) newConnect(clietnId int) {
 	newClientIsConnectedStruct := api.NewClientIsConnectedStruct{
 		clietnId,
 		room.ClientConnect(&client),
+		server.getRoomsIDsList(),
 	}
 
 	api.API.NewClientIsConnectedChl <- newClientIsConnectedStruct
@@ -129,4 +141,34 @@ func (server *gameServer) clientDisconnect(clientID int) {
 	} else {
 		fmt.Printf("Попытка удалить клиента корого уже нет: id=%v. \n", clientID)
 	}
+}
+
+func (server *gameServer) changeRoom(clientID int, newRoomID int) {
+	var clietn = server.Clients[clientID]
+
+	clietn.Room.ClientDisconnect(clientID)
+
+	room, ok := server.Rooms[newRoomID]
+	if ok {
+		clietn.Room = room
+
+		var clientsIDs = []int{clietn.Id}
+
+		server.UpdateClientsMap(
+			room.ClientConnect(clietn),
+			clientsIDs,
+		)
+	} else {
+		fmt.Printf("Err: Клиент %v пытается подключится к комнате которой нет: %v. \n", clientID, newRoomID)
+		delete(server.Clients, clientID)
+	}
+}
+
+func (server *gameServer) getRoomsIDsList() []int {
+	roomsIDs := make([]int, 0, len(server.Rooms))
+	for k := range server.Rooms {
+		roomsIDs = append(roomsIDs, k)
+	}
+
+	return roomsIDs
 }

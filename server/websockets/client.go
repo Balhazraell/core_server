@@ -57,6 +57,7 @@ func (client *Client) Listen() {
 func (client *Client) SetGameMap(gameMap []byte) {
 	// Получили карту - отправляем её пользователю.
 	fmt.Printf("Пытаемся задать карту клиенту с id = %v.\n ", client.id)
+
 	newMessage := OutcomingMessage{
 		HandlerName: "set_grid",
 		Data:        string(gameMap),
@@ -107,6 +108,21 @@ func (client *Client) SendError(message string) {
 	newMessage := OutcomingMessage{
 		HandlerName: "send_error",
 		Data:        string(jsonMessage),
+	}
+
+	websocket.JSON.Send(client.ws, newMessage)
+}
+
+func (client *Client) SetRoomsCatalog(roomsIDs []int) {
+	jsonRoomsIDs, err := json.Marshal(roomsIDs)
+
+	if err != nil {
+		fmt.Printf("Произошла ошибка при формироваии json в SetRoomsCatalog: %v \n", err)
+	}
+
+	newMessage := OutcomingMessage{
+		HandlerName: "set_rooms_catalog",
+		Data:        string(jsonRoomsIDs),
 	}
 
 	websocket.JSON.Send(client.ws, newMessage)

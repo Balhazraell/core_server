@@ -8,6 +8,7 @@ func init() {
 		make(chan int),
 		make(chan int),
 		make(chan SetChunckStateStruct),
+		make(chan ChangeRoomStructure),
 
 		// websockets
 		make(chan UpdateClientsMapStruct),
@@ -21,6 +22,7 @@ type websocketsCoreAPI struct {
 	ClientConnectionChl chan int
 	ClientDisconnectChl chan int
 	SetChunckStateChl   chan SetChunckStateStruct
+	ChangeRoomChl       chan ChangeRoomStructure
 
 	//websockets
 	UpdateClientsMapChl     chan UpdateClientsMapStruct
@@ -34,6 +36,11 @@ type SetChunckStateStruct struct {
 	ChuncID  int
 }
 
+type ChangeRoomStructure struct {
+	ClientID int
+	RoomID   int
+}
+
 // websockets
 type UpdateClientsMapStruct struct {
 	GameMap    []byte
@@ -41,8 +48,9 @@ type UpdateClientsMapStruct struct {
 }
 
 type NewClientIsConnectedStruct struct {
-	ClientID  int
-	ClientMap []byte
+	ClientID     int
+	ClientMap    []byte
+	RoomsCatalog []int
 }
 
 type SendErrorToСlientStruct struct {

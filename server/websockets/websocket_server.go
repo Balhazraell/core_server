@@ -21,6 +21,10 @@ type ChunckStateStructure struct {
 	ChunckID int `json:"chunck_id"`
 }
 
+type ChangeRoomStructure struct {
+	RoomId int `json:"room_id"`
+}
+
 type Server struct {
 	// TODO: Непонятно зачем нужен pattern в данном случае.
 	clients map[int]*Client
@@ -42,6 +46,7 @@ func Start() {
 
 	CoreMetods := map[string]func(int, string){
 		"setChunckState": setChunckState,
+		"chengeRoomID":   chengeRoomID,
 	}
 
 	AppServer = Server{
@@ -84,6 +89,10 @@ func (server *Server) listen() {
 			server.setClietMap(
 				connectedClientData.ClientID,
 				connectedClientData.ClientMap,
+			)
+			server.setRoomsCatalog(
+				connectedClientData.ClientID,
+				connectedClientData.RoomsCatalog,
 			)
 		case sendErrorToСlientStruct := <-api.API.SendErrorToСlientChl:
 			server.sendErrorToСlient(
@@ -161,6 +170,31 @@ func (server *Server) setClietMap(clietID int, clientMap []byte) {
 	}
 }
 
+func (server *Server) setRoomsCatalog(clietID int, roomsIDs []int) {
+	client, ok := server.clients[clietID]
+	if ok {
+		client.SetRoomsCatalog(roomsIDs)
+	} else {
+		fmt.Printf("Err: Попытка задать карту клиенту которого уже нет: %v. \n", clietID)
+	}
+}
+
 func (server *Server) sendErrorToСlient(clientID int, message string) {
 	server.clients[clientID].SendError(message)
+}
+
+func chengeRoomID(clientID int, data string) {
+	var changeRoomStructure ChangeRoomStructure
+
+	err := json.Unmarshal([]byte(data), &changeRoomStructure)
+
+	if err != nil {
+		fmt.Println("Ошибка парсинга json в setChunckState %v", err)
+	}
+
+	changeRoomStructureForCore := api.ChangeRoomStructure{
+		clientID,
+		changeRoomStructure.RoomId}
+
+	api.API.ChangeRoomChl <- changeRoomStructureForCore
 }

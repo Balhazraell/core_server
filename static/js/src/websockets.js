@@ -8,6 +8,7 @@ var ws
 var handlers = {
     'set_grid': set_grid,
     'send_error': send_error,
+    'set_rooms_catalog': set_rooms_catalog,
 };
 
 // Пошла работа с websockets
@@ -60,5 +61,26 @@ function set_chunck_state(chunck_id){
     ws.send(JSON.stringify(message));
 }
 
+function sendChangeRoomID(roomID){
+    var data = {
+        'room_id': parseInt(roomID)
+    }
+
+    var message = {
+        'handler_name': 'chengeRoomID',
+        'data': JSON.stringify(data)
+    }
+
+    console.log("Отправляем id = ", message)
+
+    ws.send(JSON.stringify(message));
+}
+
+function set_rooms_catalog(roomsIDs){
+    console.log("Католог комнат:", roomsIDs)
+    main.setRoomCatalog(roomsIDs);
+}
+
 exports.connect = connect;
 exports.set_chunck_state = set_chunck_state;
+exports.sendChangeRoomID = sendChangeRoomID;

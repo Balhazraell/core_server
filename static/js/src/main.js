@@ -38,6 +38,10 @@ function app_start(){
     ctx = canvas.getContext('2d');
     websocket.connect();
     MousManager = new mouse_manager.MouseManager(canvas);
+    var roomCatalog = document.getElementById("roomCatalog");
+    setRoomCatalog([1,2,3])
+    roomCatalog.addEventListener("change", changeRoom);
+
     game_loop();
 }
 
@@ -191,6 +195,27 @@ function send_error(message=""){
     MessageIntervalID = setInterval(send_error, 5000);
 }
 
+function setRoomCatalog(roomsList){
+    var roomCatalog = document.getElementById("roomCatalog");
+    // сначала очищу список.
+    while (roomCatalog.length > 0){
+        roomCatalog.remove(roomCatalog.length-1);
+    }
+
+    // А теперь заполняем.
+    for ( let i = 0; i < roomsList.length; i++) {
+        let option = document.createElement("option");
+        option.value = roomsList[i];
+        option.text = roomsList[i];
+        roomCatalog.add(option);
+    }
+}
+
+function changeRoom(event){
+    websocket.sendChangeRoomID(event.target.value)
+}
+
 exports.set_grid = set_grid;
 exports.set_chunck_state = set_chunck_state;
 exports.send_error = send_error;
+exports.setRoomCatalog = setRoomCatalog;
