@@ -19,3 +19,29 @@ webpack
 
 В серверной части используется библиотека golang.org/x/net/websocket для корректной работы её надо установить локально:
 go get golang.org/x/net/websocket
+
+
+/-/-/-/-/-/-/-/-/-/-/-/-/-/
+Установкеа RabbitMQ и его настройка.
+1) Устанавливаем RabbitMQ.
+2) Устанавливаем плагин работы с визуальной оболочкой RabbitMQ - rabbitmq-plugins enable rabbitmq_management.
+RabbitMQ имеет несколько консольных приложений для работы:
+* rabbitmq-plugins - установка плагинов для RabbitMQ
+* rabbitmqctl - основная консольная утилита для администрирования RabbitMQ.
+* rabbitmqadmin - Оператор тасков для HTTP API ??? (ну или что-то такое)
+
+ 3) Создаем роль:
+ rabbitmqctl add_user name password
+ 4) Создаем хост:
+ rabbitmqctl add_vhost host_name
+ 5) Назначем хосту пользователя:
+ rabbitmqctl set_permissions -p host_name user_name .* .* .*
+
+ (Все это можно сделать через визуальную оболочку)
+ 127.0.0.1:15672
+ логин/пароль guest/guest
+
+ /-/-/-/-/-/-/-/-/-/-/-/-/-/
+ Устанавливаем библиотеку amqp для go.
+ * go get github.com/streadway/amqp
+
