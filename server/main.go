@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"./core"
+	"./logger"
 	"./websockets"
 )
 
@@ -35,7 +36,16 @@ func returnIndex(response http.ResponseWriter, request *http.Request) {
 }
 
 func main() {
-	defer fmt.Println("Server is ended...")
+	defer logger.InfoPrint("Сервер закончил работу.")
+	// Запускаем логгер.
+	ok := logger.InitLogger()
+
+	if ok {
+		fmt.Println("Logger - YES")
+	} else {
+		fmt.Println("Logger - NO")
+	}
+
 	// Запускаем игровой сервер.
 	core.GameServerStart()
 
@@ -44,6 +54,6 @@ func main() {
 
 	// Стартуем сервер статики. Стартуем его последним.
 	// ListenAndServe - ждем завершения, по этому код дальше не выполняется.
-	fmt.Println("Server is started...")
+	logger.InfoPrint("Сервер запущен и готов к работе.")
 	http.ListenAndServe(":8081", nil)
 }

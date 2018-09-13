@@ -1,9 +1,8 @@
 package core
 
 import (
-	"fmt"
-
 	"../api"
+	"../logger"
 )
 
 // В первой итерации вебсокеты будут передавать сообщения на прямую в gameServer.
@@ -50,14 +49,12 @@ func Stop() {
 
 func (server *gameServer) loop() {
 	defer func() {
-		fmt.Println("Игровой сервер закончил свою работу.")
+		logger.InfoPrint("Игровой сервер закончил свою работу.")
 	}()
 
-	fmt.Println("Игровой сервер запущен.")
+	logger.InfoPrint("Игровой сервер запущен.")
 
 	for {
-		// Что-нибудь что делают всякие сервера.
-
 		select {
 		case <-server.shutdownLoop:
 			return
@@ -85,11 +82,12 @@ func (server *gameServer) newConnect(clietnId int) {
 	// TODO: ЭТОНАДО РАЗДЕЛИТЬ НА ДВЕ ФУНКЦИИ!!!!
 	// подключение нового пользователя и получение им карты это два разных события.
 
-	fmt.Println("На сервер пришел новый пользователь")
+	logger.InfoPrint("На сервер пришел новый пользователь.")
 
 	room, ok := server.Rooms[1]
 	if !ok {
-		fmt.Printf("Err: Попытка присоединится к комнате которойнет: Клиет - %v", clietnId)
+		logger.WarningPrintf("Попытка присоединится к комнате которой нет: Клиет - %v", clietnId)
+		return
 	}
 
 	client := Client{
@@ -110,7 +108,7 @@ func (server *gameServer) newConnect(clietnId int) {
 
 // Интерфейсы для получения данных от
 func (server *gameServer) setChunckState(clientID int, chuncID int) {
-	fmt.Println("На сервер пришело сообщение об обновлении состояния комнаты")
+	logger.InfoPrint("На сервер пришело сообщение об обновлении состояния комнаты")
 	server.Clients[clientID].Room.SetChunckState(clientID, chuncID)
 }
 
@@ -135,11 +133,12 @@ func (server *gameServer) SendErrorToСlient(client_id int, message string) {
 func (server *gameServer) clientDisconnect(clientID int) {
 	client, ok := server.Clients[clientID]
 	if ok {
-		fmt.Printf("Удаляем клиента с сервера: id=%v. \n", clientID)
+		logger.InfoPrintf("Удаляем клиента с сервера: id=%v.", clientID)
 		client.Room.ClientDisconnect(clientID)
 		delete(server.Clients, clientID)
 	} else {
-		fmt.Printf("Попытка удалить клиента корого уже нет: id=%v. \n", clientID)
+		logger.WarningPrintf("Попытка удалить клиента корого уже нет: id=%v.", clientID)
+		return
 	}
 }
 
@@ -159,7 +158,8 @@ func (server *gameServer) changeRoom(clientID int, newRoomID int) {
 			clientsIDs,
 		)
 	} else {
-		fmt.Printf("Err: Клиент %v пытается подключится к комнате которой нет: %v. \n", clientID, newRoomID)
+		logger.WarningPrintf("Err: Клиент %v пытается подключится к комнате которой нет: %v.", clientID, newRoomID)
+		// TODO: нужно отправить сообщение клиенту, о том, что произошла ошибка.
 		delete(server.Clients, clientID)
 	}
 }

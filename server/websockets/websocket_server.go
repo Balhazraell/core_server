@@ -2,13 +2,13 @@ package websockets
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"runtime"
 
 	"golang.org/x/net/websocket"
 
 	"../api"
+	"../logger"
 )
 
 // пока так, но потом надо сделать отдельную инициализацию...
@@ -31,18 +31,14 @@ type Server struct {
 
 	// Каналы
 	shutdownCh chan bool
-	// inComing  chan string
-	outComing chan string
 
 	CoreMetods map[string]func(int, string)
 }
 
 func Start() {
-	fmt.Println("Websocket start...")
+	logger.InfoPrint("Websocket start...")
 	clients := make(map[int]*Client)
 	shutdownCh := make(chan bool)
-	// inComing := make(chan string)
-	outComing := make(chan string)
 
 	CoreMetods := map[string]func(int, string){
 		"setChunckState": setChunckState,
@@ -52,8 +48,6 @@ func Start() {
 	AppServer = Server{
 		clients,
 		shutdownCh,
-		// inComing,
-		outComing,
 		CoreMetods,
 	}
 	go AppServer.listen()
@@ -64,10 +58,9 @@ func (server *Server) listen() {
 		defer func() {
 			err := ws.Close()
 			if err != nil {
-				fmt.Println("Websocker close error!")
-				fmt.Println(err)
+				logger.ErrorPrintf("Websocker закрылся с ошибкой: %v", err)
 			}
-			fmt.Println("Websocker close...")
+			logger.InfoPrint("Websocker закрыт...")
 		}()
 
 		server.newClient(ws)
@@ -78,8 +71,6 @@ func (server *Server) listen() {
 		select {
 		case <-server.shutdownCh:
 			return
-		case <-server.outComing:
-			fmt.Println("Необходимо отослать сообщение пользователям.")
 		case updateClientsMapStruct := <-api.API.UpdateClientsMapChl:
 			server.updateClientsMap(
 				updateClientsMapStruct.GameMap,
@@ -105,7 +96,8 @@ func (server *Server) listen() {
 
 func (server *Server) newClient(ws *websocket.Conn) {
 	if ws == nil {
-		panic("ws cannot be nil")
+		logger.ErrorPrint("ws не может быть равен nil!")
+		return
 	}
 
 	ch := make(chan string, channalBufSize)
@@ -113,8 +105,10 @@ func (server *Server) newClient(ws *websocket.Conn) {
 	client := &Client{ClientMaxId, ws, ch, shutdownRead}
 
 	server.clients[client.id] = client
-	fmt.Println("New client is connected")
-	fmt.Printf("%v goroutine is running \n", runtime.NumGoroutine())
+
+	logger.InfoPrint("Новый клиент присоединился.")
+	// TODO: на основе этого принта надо сделать тест на корректную диструктуризацию горутин.
+	logger.InfoPrintf("%v горутин сейчас запущенно.", runtime.NumGoroutine())
 
 	// Создали канал, запустили его, теперь можно и игровому серверпусказать что подключился игрок.
 	api.API.ClientConnectionChl <- ClientMaxId
@@ -126,8 +120,9 @@ func (server *Server) newClient(ws *websocket.Conn) {
 func (server *Server) DelClient(client *Client) {
 	api.API.ClientDisconnectChl <- client.id
 	delete(AppServer.clients, client.id)
-	fmt.Printf("Client whith id %v is deleted \n", client.id)
-	fmt.Printf("%v goroutine is running \n", runtime.NumGoroutine())
+	logger.InfoPrintf("Клиент с id %v удален.", client.id)
+	// TODO: на основе этого принта надо сделать тест на корректную диструктуризацию горутин.
+	logger.InfoPrintf("%v горутин сейчас запущенно", runtime.NumGoroutine())
 }
 
 func (server *Server) IncomingMessage(client *Client, message *IncomingMessage) {
@@ -142,7 +137,8 @@ func setChunckState(clientID int, data string) {
 	err := json.Unmarshal([]byte(data), &chunckStateStructure)
 
 	if err != nil {
-		fmt.Println("Ошибка парсинга json в setChunckState %v", err)
+		logger.WarningPrintf("Ошибка парсинга json в setChunckState %v.", err)
+		return
 	}
 
 	setChunckStateStruct := api.SetChunckStateStruct{
@@ -166,7 +162,8 @@ func (server *Server) setClietMap(clietID int, clientMap []byte) {
 	if ok {
 		client.SetGameMap(clientMap)
 	} else {
-		fmt.Printf("Err: Попытка задать карту клиенту которого уже нет: %v. \n", clietID)
+		logger.WarningPrintf("Попытка задать карту клиенту которого уже нет: %v.", clietID)
+		return
 	}
 }
 
@@ -175,7 +172,8 @@ func (server *Server) setRoomsCatalog(clietID int, roomsIDs []int) {
 	if ok {
 		client.SetRoomsCatalog(roomsIDs)
 	} else {
-		fmt.Printf("Err: Попытка задать карту клиенту которого уже нет: %v. \n", clietID)
+		logger.WarningPrintf("Попытка задать карту клиенту которого уже нет: %v.", clietID)
+		return
 	}
 }
 
@@ -189,7 +187,7 @@ func chengeRoomID(clientID int, data string) {
 	err := json.Unmarshal([]byte(data), &changeRoomStructure)
 
 	if err != nil {
-		fmt.Println("Ошибка парсинга json в setChunckState %v", err)
+		logger.WarningPrintf("Ошибка парсинга json в setChunckState %v", err)
 	}
 
 	changeRoomStructureForCore := api.ChangeRoomStructure{

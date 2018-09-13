@@ -2,7 +2,8 @@ package core
 
 import (
 	"encoding/json"
-	"fmt"
+
+	"../logger"
 )
 
 type Chunc struct {
@@ -75,14 +76,15 @@ func (room *Room) Stop() {
 
 func (room *Room) ClientConnect(client *Client) []byte {
 	// Необходимо добавить в комнату пользователя.
-	fmt.Printf("К комнате %v подключился новый клиент с id=%v.\n", room.ID, client.Id)
+	logger.InfoPrintf("К комнате %v подключился новый клиент с id=%v.", room.ID, client.Id)
 	room.clients[client.Id] = client
 	// ВОобще не при подключении надо возвращать карту, это надо делать по специальной функции,
 	// Наверно надо отдавать в loop в канал id пользователя, кому надо задать карту...
 	gameMap, err := json.Marshal(room.Map)
 
 	if err != nil {
-		fmt.Printf("При формировнии json при подключении нового клиента произошла ошибка %v \n", err)
+		// TODO: тут надо сделать так, что бы функция завершилась ничего не возвращая...
+		logger.WarningPrintf("При формировнии json при подключении нового клиента произошла ошибка %v.", err)
 	}
 
 	return gameMap
@@ -90,10 +92,10 @@ func (room *Room) ClientConnect(client *Client) []byte {
 
 func (room *Room) loop() {
 	defer func() {
-		fmt.Printf("Комната с id=v% закончила работу. \n", room.ID)
+		logger.InfoPrintf("Комната с id=%v закончила работу.", room.ID)
 	}()
 
-	fmt.Printf("Комната с id=v% начала работу. \n", room.ID)
+	logger.InfoPrintf("Комната с id=%v начала работу.", room.ID)
 
 	for {
 		// Обновление логики происходит тут.
@@ -124,17 +126,18 @@ func (room *Room) SetChunckState(client_id int, chunk_id int) {
 
 		room.updateClientsMap()
 	} else {
-		fmt.Printf("Err: Попытка изменить значение в поле с изменненым значеним клиентом с id=%v.", client_id)
+		logger.WarningPrintf("Попытка изменить значение в поле с изменненым значеним клиентом с id=%v.", client_id)
 		GameServer.SendErrorToСlient(client_id, "Нельзя изменить значение!")
 	}
 }
 
 func (room *Room) updateClientsMap() {
-	fmt.Println("Обновление карт пользователей.")
+	logger.InfoPrint("Обновление карт пользователей.")
 	gameMap, err := json.Marshal(room.Map)
 
 	if err != nil {
-		fmt.Printf("При формировнии json при подключении нового клиента произошла ошибка %v \n", err)
+		logger.WarningPrintf("При формировнии json при подключении нового клиента произошла ошибка %v.", err)
+		return
 	}
 
 	clientsIDs := make([]int, 0, len(room.clients))
@@ -148,9 +151,9 @@ func (room *Room) updateClientsMap() {
 func (room *Room) ClientDisconnect(clientID int) {
 	_, ok := room.clients[clientID]
 	if ok {
-		fmt.Printf("Удаляем клиента id=%v из комнаты id=%v. \n", clientID, room.ID)
+		logger.InfoPrintf("Удаляем клиента id=%v из комнаты id=%v.", clientID, room.ID)
 		delete(room.clients, clientID)
 	} else {
-		fmt.Printf("Попытка удалить клиента из комнаты, корого уже нет: id=%v. \n", clientID)
+		logger.WarningPrintf("Попытка удалить клиента из комнаты, корого уже нет: id=%v.", clientID)
 	}
 }

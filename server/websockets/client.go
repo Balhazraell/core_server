@@ -2,11 +2,12 @@ package websockets
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
 	"sync"
 
 	"golang.org/x/net/websocket"
+
+	"../logger"
 )
 
 const channalBufSize = 100
@@ -50,31 +51,28 @@ func (client *Client) Listen() {
 
 	wg.Wait()
 
-	fmt.Printf("Listen у клиента %d работу закончил \n", client.id)
+	logger.InfoPrintf("Listen у клиента %d работу закончил.", client.id)
 	AppServer.DelClient(client)
 }
 
 func (client *Client) SetGameMap(gameMap []byte) {
 	// Получили карту - отправляем её пользователю.
-	fmt.Printf("Пытаемся задать карту клиенту с id = %v.\n ", client.id)
+	logger.InfoPrintf("Пытаемся задать карту клиенту с id = %v.", client.id)
 
 	newMessage := OutcomingMessage{
 		HandlerName: "set_grid",
 		Data:        string(gameMap),
 	}
 
-	fmt.Printf("newMessage сформирован и готовится к отправке.\n")
+	logger.InfoPrint("newMessage сформирован и готовится к отправке.")
 
 	websocket.JSON.Send(client.ws, newMessage)
 }
 
 func (client *Client) listenRead() {
 	defer func() {
-		fmt.Printf("listenRead у клиента %d работу закончил \n", client.id)
+		logger.InfoPrintf("listenRead у клиента %d работу закончил.", client.id)
 	}()
-
-	// TODO: убрать это отсюда.
-	// api.API.ClientConnectionChl <- ClientMaxId
 
 	for {
 		select {
@@ -85,11 +83,9 @@ func (client *Client) listenRead() {
 			err := websocket.JSON.Receive(client.ws, &msg)
 
 			if err == io.EOF {
-				// client.shutdownWrite <- true
 				return
 			} else if err != nil {
-				fmt.Printf("Проблема чтения сообщения от клиента : %v \n", err)
-				// client.shutdownWrite <- true
+				logger.ErrorPrintf("Проблема чтения сообщения от клиента : %v.", err)
 				return
 			} else {
 				AppServer.IncomingMessage(client, &msg)
@@ -102,7 +98,8 @@ func (client *Client) SendError(message string) {
 	jsonMessage, err := json.Marshal(message)
 
 	if err != nil {
-		fmt.Printf("При формировнии json при отправки сообщения об ошибке произошла ошибка %v \n", err)
+		logger.ErrorPrintf("При формировнии json при отправки сообщения об ошибке произошла ошибка: %v", err)
+		return
 	}
 
 	newMessage := OutcomingMessage{
@@ -117,7 +114,8 @@ func (client *Client) SetRoomsCatalog(roomsIDs []int) {
 	jsonRoomsIDs, err := json.Marshal(roomsIDs)
 
 	if err != nil {
-		fmt.Printf("Произошла ошибка при формироваии json в SetRoomsCatalog: %v \n", err)
+		logger.ErrorPrintf("При формировнии json при отправки сообщения об ошибке произошла ошибка: %v", err)
+		return
 	}
 
 	newMessage := OutcomingMessage{
