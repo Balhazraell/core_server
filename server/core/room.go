@@ -63,6 +63,7 @@ func StartNewRoom(id int) *Room {
 	newRoom.GameState = 1
 	newRoom.shutdownLoop = make(chan bool)
 	newRoom.createMap()
+	// newRoom.
 
 	go newRoom.loop()
 
@@ -110,7 +111,6 @@ func (room *Room) loop() {
 		case <-room.updateMap:
 			room.updateClientsMap()
 		}
-
 	}
 }
 
