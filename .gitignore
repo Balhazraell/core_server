@@ -1,2 +1,4 @@
 # Игнорируем файл с логами, его не нужно хранить под системой хранения версии.
 server/log.txt
+static/js/node_modules
+static/js/package-lock.json
