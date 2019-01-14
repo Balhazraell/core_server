@@ -6,12 +6,25 @@ import (
 	"../logger"
 )
 
+/*
+	У комнат несколько методов которые по сути должны быть API:
+	StartNewRoom,
+	Stop,
+	ClientConnect,
+	ClientDisconnect,
+	SetChunckState,
+*/
+
+// Chunc описывает струтуру участка игрового пространства.
 type Chunc struct {
 	ID          int      `json:"id"`
 	State       int      `json:"state"`
 	Сoordinates [][2]int `json:"coordinates"`
 }
 
+// Room это игровое пространство/"Карта" в котором происходит действие.
+// Комната живет своей жизнью.
+// Комната состоит из частей (Chunc)
 type Room struct {
 	ID      int
 	Map     map[int]*Chunc
@@ -28,13 +41,13 @@ type Room struct {
 func (room *Room) createMap() {
 	var step = 100
 	var y = 0
-	var chunckIdCounter = 0
+	var chunckIDCounter = 0
 
 	for i := 0; i < 3; i++ {
 		var x = 0
 		for j := 0; j < 3; j++ {
 			chunc := Chunc{}
-			chunc.ID = chunckIdCounter
+			chunc.ID = chunckIDCounter
 			chunc.Сoordinates = append(
 				chunc.Сoordinates,
 				[2]int{x, y},
@@ -48,13 +61,15 @@ func (room *Room) createMap() {
 
 			x += step
 
-			room.Map[chunckIdCounter] = &chunc
-			chunckIdCounter++
+			room.Map[chunckIDCounter] = &chunc
+			chunckIDCounter++
 		}
 		y += step
 	}
 }
 
+// StartNewRoom - метод запуска новой комнаты.
+// На вход подается id комнаты котурую надо создать.
 func StartNewRoom(id int) *Room {
 	newRoom := Room{}
 	newRoom.ID = id
@@ -70,15 +85,19 @@ func StartNewRoom(id int) *Room {
 	return &newRoom
 }
 
+// Stop - Метод принадлежит Room.
+// Служит для прекращения работы комнаты.
 func (room *Room) Stop() {
 	// Какая-нибудь логика завершения работы.
 	room.shutdownLoop <- true
 }
 
+// ClientConnect - Метод принадлежит Room.
+// Метод подключения нового пользователя к комнате.
 func (room *Room) ClientConnect(client *Client) []byte {
 	// Необходимо добавить в комнату пользователя.
-	logger.InfoPrintf("К комнате %v подключился новый клиент с id=%v.", room.ID, client.Id)
-	room.clients[client.Id] = client
+	logger.InfoPrintf("К комнате %v подключился новый клиент с id=%v.", room.ID, client.ID)
+	room.clients[client.ID] = client
 	// ВОобще не при подключении надо возвращать карту, это надо делать по специальной функции,
 	// Наверно надо отдавать в loop в канал id пользователя, кому надо задать карту...
 	gameMap, err := json.Marshal(room.Map)
@@ -114,9 +133,11 @@ func (room *Room) loop() {
 	}
 }
 
-func (room *Room) SetChunckState(client_id int, chunk_id int) {
-	if room.Map[chunk_id].State == 0 {
-		room.Map[chunk_id].State = room.GameState
+// SetChunckState - Метод принадлежит Room.
+// Метод вызываемый при попытке пользователя что-то сделать с участком карты.
+func (room *Room) SetChunckState(clientID int, chunkID int) {
+	if room.Map[chunkID].State == 0 {
+		room.Map[chunkID].State = room.GameState
 
 		if room.GameState == 1 {
 			room.GameState = 2
@@ -126,8 +147,8 @@ func (room *Room) SetChunckState(client_id int, chunk_id int) {
 
 		room.updateClientsMap()
 	} else {
-		logger.WarningPrintf("Попытка изменить значение в поле с изменненым значеним клиентом с id=%v.", client_id)
-		GameServer.SendErrorToСlient(client_id, "Нельзя изменить значение!")
+		logger.WarningPrintf("Попытка изменить значение в поле с изменненым значеним клиентом с id=%v.", clientID)
+		GameServer.SendErrorToСlient(clientID, "Нельзя изменить значение!")
 	}
 }
 
@@ -148,6 +169,7 @@ func (room *Room) updateClientsMap() {
 	GameServer.UpdateClientsMap(gameMap, clientsIDs)
 }
 
+// ClientDisconnect метод отключающий пользователя от этой комнаты.
 func (room *Room) ClientDisconnect(clientID int) {
 	_, ok := room.clients[clientID]
 	if ok {

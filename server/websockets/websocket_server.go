@@ -11,20 +11,25 @@ import (
 	"../logger"
 )
 
-// пока так, но потом надо сделать отдельную инициализацию...
+// AppServer - Singletone websoket сервера.
 var AppServer Server
 
-// Когда клиент подсоединяется - должен передоваться его id...
-var ClientMaxId int
+// ClientMaxID - текущее значение максимального значения ID пользователя.
+// Временная переменная нужная для прототипа.
+// В реальном приложении, после авторизации данные должны приходить на сервер.
+var ClientMaxID int
 
+// ChunckStateStructure - Структура описывающая игровой участок (chunck)
 type ChunckStateStructure struct {
 	ChunckID int `json:"chunck_id"`
 }
 
+// ChangeRoomStructure - Структура описывающая игровую комнату.
 type ChangeRoomStructure struct {
-	RoomId int `json:"room_id"`
+	RoomID int `json:"room_id"`
 }
 
+// Server - Структура описывающая websocket сервер.
 type Server struct {
 	// TODO: Непонятно зачем нужен pattern в данном случае.
 	clients map[int]*Client
@@ -35,6 +40,7 @@ type Server struct {
 	CoreMetods map[string]func(int, string)
 }
 
+// Start - Метод запуска websocket сервера.
 func Start() {
 	logger.InfoPrint("Websocket start...")
 	clients := make(map[int]*Client)
@@ -102,7 +108,7 @@ func (server *Server) newClient(ws *websocket.Conn) {
 
 	ch := make(chan string, channalBufSize)
 	shutdownRead := make(chan bool)
-	client := &Client{ClientMaxId, ws, ch, shutdownRead}
+	client := &Client{ClientMaxID, ws, ch, shutdownRead}
 
 	server.clients[client.id] = client
 
@@ -111,12 +117,13 @@ func (server *Server) newClient(ws *websocket.Conn) {
 	logger.InfoPrintf("%v горутин сейчас запущенно.", runtime.NumGoroutine())
 
 	// Создали канал, запустили его, теперь можно и игровому серверпусказать что подключился игрок.
-	api.API.ClientConnectionChl <- ClientMaxId
-	ClientMaxId++
+	api.API.ClientConnectionChl <- ClientMaxID
+	ClientMaxID++
 	// надо наверно сделать так что бы вызов этого метода не тормазил работу метода
 	client.Listen()
 }
 
+// DelClient - Удалить клиента (Принудительно/Или сам отключился)
 func (server *Server) DelClient(client *Client) {
 	api.API.ClientDisconnectChl <- client.id
 	delete(AppServer.clients, client.id)
@@ -125,6 +132,7 @@ func (server *Server) DelClient(client *Client) {
 	logger.InfoPrintf("%v горутин сейчас запущенно", runtime.NumGoroutine())
 }
 
+// IncomingMessage - метод сообщающий о входящем сообщении от клиента.
 func (server *Server) IncomingMessage(client *Client, message *IncomingMessage) {
 	// скорее всего надо не сразу дергать методы игрового сервера, а нормально распарсить их тут и
 	// вызывать конкретные методы с конкретными аргументами.
@@ -142,8 +150,8 @@ func setChunckState(clientID int, data string) {
 	}
 
 	setChunckStateStruct := api.SetChunckStateStruct{
-		clientID,
-		chunckStateStructure.ChunckID,
+		ClientID: clientID,
+		ChuncID:  chunckStateStructure.ChunckID,
 	}
 
 	api.API.SetChunckStateChl <- setChunckStateStruct
@@ -191,8 +199,8 @@ func chengeRoomID(clientID int, data string) {
 	}
 
 	changeRoomStructureForCore := api.ChangeRoomStructure{
-		clientID,
-		changeRoomStructure.RoomId}
+		ClientID: clientID,
+		RoomID:   changeRoomStructure.RoomID}
 
 	api.API.ChangeRoomChl <- changeRoomStructureForCore
 }

@@ -13,8 +13,4 @@ class Chunck {
     }
 }
 
-// TODO: пока старвый вариант мне нравится больше надо посмотреть ES6
-// const _Chunck = Chunck;
-// export { _Chunck as Chunck };
-
 exports.Chunck = Chunck;

@@ -14,18 +14,19 @@ const channalBufSize = 100
 
 var maxID int
 
+// IncomingMessage - Структура описывающая формат входящего сообщения от клиента.
 type IncomingMessage struct {
-	// По ходу это не входящее сообщение а просто формат передачи сообщений, один и туда и обратно!
 	HandlerName string `json:"handler_name"`
 	Data        string `json:"data"`
 }
 
+// OutcomingMessage - Структура описывающая формат исходящего сообщения для клиента.
 type OutcomingMessage struct {
-	// По ходу это не входящее сообщение а просто формат передачи сообщений, один и туда и обратно!
 	HandlerName string `json:"handler_name"`
 	Data        string `json:"data"`
 }
 
+// Client - Структура описывающая способ хранения связи клиента на сервере и соединения с клиентом.
 type Client struct {
 	id int // Должен браться из базы в соответствии с id пользователя в базе.
 	ws *websocket.Conn
@@ -35,11 +36,13 @@ type Client struct {
 	// shutdownWrite chan bool
 }
 
+// Shutdown - метод завершения соединения с клиентом.
 func (client *Client) Shutdown() {
 	client.shutdownRead <- true
 	// client.shutdownWrite <- true
 }
 
+// Listen - метод начала соединения с клиентом. Начинаем слушать сообщения от пользователя.
 func (client *Client) Listen() {
 	var wg sync.WaitGroup
 	wg.Add(1)
@@ -55,6 +58,7 @@ func (client *Client) Listen() {
 	AppServer.DelClient(client)
 }
 
+// SetGameMap - отдаем пользователю карту где он сейчас находится.
 func (client *Client) SetGameMap(gameMap []byte) {
 	// Получили карту - отправляем её пользователю.
 	logger.InfoPrintf("Пытаемся задать карту клиенту с id = %v.", client.id)
@@ -94,6 +98,7 @@ func (client *Client) listenRead() {
 	}
 }
 
+// SendError - отослать пользователю сообщение об ошибке.
 func (client *Client) SendError(message string) {
 	jsonMessage, err := json.Marshal(message)
 
@@ -110,6 +115,7 @@ func (client *Client) SendError(message string) {
 	websocket.JSON.Send(client.ws, newMessage)
 }
 
+// SetRoomsCatalog - метод отдающий пользователю текущий каталок с комнатами.
 func (client *Client) SetRoomsCatalog(roomsIDs []int) {
 	jsonRoomsIDs, err := json.Marshal(roomsIDs)
 

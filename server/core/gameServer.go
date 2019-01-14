@@ -8,10 +8,13 @@ import (
 // В первой итерации вебсокеты будут передавать сообщения на прямую в gameServer.
 // но потом надо продумать другую связь, возможно через балансировщик.
 
+// GameServer - singletone для работы с care частью сервера.GameServer
 var GameServer gameServer
 
+// Client структура описывающая связь клиента и комнаты в которой он находится.
+// Считается что пользователь не может быть в не комнат - тоесть хотя бы в какой-то он точно есть.
 type Client struct {
-	Id   int
+	ID   int
 	Room *Room
 }
 
@@ -22,6 +25,7 @@ type gameServer struct {
 	shutdownLoop chan bool
 }
 
+// GameServerStart - метод запуска игрового сервера.
 func GameServerStart() {
 	var clients = make(map[int]*Client)
 	var rooms = make(map[int]*Room)
@@ -43,6 +47,7 @@ func GameServerStart() {
 
 }
 
+// Stop - метод завершения работы игрового сервера.
 func Stop() {
 	GameServer.shutdownLoop <- true
 }
@@ -76,7 +81,7 @@ func (server *gameServer) loop() {
 	}
 }
 
-func (server *gameServer) newConnect(clietnId int) {
+func (server *gameServer) newConnect(clietnID int) {
 	// сейчас пока буду закидывать в первую комнату.
 	// Подключаем по id комнаты в которую он входит.
 	// TODO: ЭТОНАДО РАЗДЕЛИТЬ НА ДВЕ ФУНКЦИИ!!!!
@@ -86,27 +91,26 @@ func (server *gameServer) newConnect(clietnId int) {
 
 	room, ok := server.Rooms[1]
 	if !ok {
-		logger.WarningPrintf("Попытка присоединится к комнате которой нет: Клиет - %v", clietnId)
+		logger.WarningPrintf("Попытка присоединится к комнате которой нет: Клиет - %v", clietnID)
 		return
 	}
 
 	client := Client{
-		clietnId,
+		clietnID,
 		room,
 	}
 
-	GameServer.Clients[client.Id] = &client
+	GameServer.Clients[client.ID] = &client
 
 	newClientIsConnectedStruct := api.NewClientIsConnectedStruct{
-		clietnId,
-		room.ClientConnect(&client),
-		server.getRoomsIDsList(),
+		ClientID:     clietnID,
+		ClientMap:    room.ClientConnect(&client),
+		RoomsCatalog: server.getRoomsIDsList(),
 	}
 
 	api.API.NewClientIsConnectedChl <- newClientIsConnectedStruct
 }
 
-// Интерфейсы для получения данных от
 func (server *gameServer) setChunckState(clientID int, chuncID int) {
 	logger.InfoPrint("На сервер пришело сообщение об обновлении состояния комнаты")
 	server.Clients[clientID].Room.SetChunckState(clientID, chuncID)
@@ -114,17 +118,17 @@ func (server *gameServer) setChunckState(clientID int, chuncID int) {
 
 func (server *gameServer) UpdateClientsMap(gameMap []byte, clientsIDs []int) {
 	updateClientsMapStruct := api.UpdateClientsMapStruct{
-		gameMap,
-		clientsIDs,
+		GameMap:    gameMap,
+		ClientsIDs: clientsIDs,
 	}
 
 	api.API.UpdateClientsMapChl <- updateClientsMapStruct
 }
 
-func (server *gameServer) SendErrorToСlient(client_id int, message string) {
+func (server *gameServer) SendErrorToСlient(clientID int, message string) {
 	sendErrorToСlientStruct := api.SendErrorToСlientStruct{
-		client_id,
-		message,
+		ClientID: clientID,
+		Message:  message,
 	}
 
 	api.API.SendErrorToСlientChl <- sendErrorToСlientStruct
@@ -151,7 +155,7 @@ func (server *gameServer) changeRoom(clientID int, newRoomID int) {
 	if ok {
 		clietn.Room = room
 
-		var clientsIDs = []int{clietn.Id}
+		var clientsIDs = []int{clietn.ID}
 
 		server.UpdateClientsMap(
 			room.ClientConnect(clietn),
