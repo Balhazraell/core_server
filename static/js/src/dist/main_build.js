@@ -171,7 +171,6 @@ function app_start(){
     websocket.connect();
     MousManager = new mouse_manager.MouseManager(canvas);
     var roomCatalog = document.getElementById("roomCatalog");
-    setRoomCatalog([1,2,3])
     roomCatalog.addEventListener("change", changeRoom);
 
     game_loop();
