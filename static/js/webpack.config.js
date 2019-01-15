@@ -1,8 +1,8 @@
 module.exports = {
     mode: 'development',
-    entry: './js/src/main.js',
+    entry: './src/main.js',
     output: {
-        path: __dirname + "/js/dist/",
+        path: __dirname + "/src/dist/",
         filename: 'main_build.js'
     },
 

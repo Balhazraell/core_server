@@ -3,10 +3,12 @@
   "version": "0.5.0",
   "description": "",
   "main": "/src/main.js",
-  "dependencies": {
-    "jest": "^23.6.0"
+  "dependencies": {},
+  "devDependencies": {
+    "jest": "^23.6.0",
+    "webpack": "^4.28.4",
+    "webpack-cli": "^3.2.1"
   },
-  "devDependencies": {},
   "scripts": {
     "test": "jest"
   },

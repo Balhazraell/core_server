@@ -81,15 +81,15 @@
 /******/
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = "./js/src/main.js");
+/******/ 	return __webpack_require__(__webpack_require__.s = "./src/main.js");
 /******/ })
 /************************************************************************/
 /******/ ({
 
-/***/ "./js/src/chunck.js":
-/*!**************************!*\
-  !*** ./js/src/chunck.js ***!
-  \**************************/
+/***/ "./src/chunck.js":
+/*!***********************!*\
+  !*** ./src/chunck.js ***!
+  \***********************/
 /*! no static exports found */
 /***/ (function(module, exports, __webpack_require__) {
 
@@ -109,26 +109,23 @@ class Chunck {
     }
 }
 
-// TODO: пока старвый вариант мне нравится больше надо посмотреть ES6
-// const _Chunck = Chunck;
-// export { _Chunck as Chunck };
-
 exports.Chunck = Chunck;
 
 /***/ }),
 
-/***/ "./js/src/main.js":
-/*!************************!*\
-  !*** ./js/src/main.js ***!
-  \************************/
+/***/ "./src/main.js":
+/*!*********************!*\
+  !*** ./src/main.js ***!
+  \*********************/
 /*! no static exports found */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
-var chunck = __webpack_require__(/*! ./chunck */ "./js/src/chunck.js");
-var websocket = __webpack_require__(/*! ./websockets */ "./js/src/websockets.js");
-var mouse_manager = __webpack_require__(/*! ./mouse_manager */ "./js/src/mouse_manager.js");
+
+var chunck = __webpack_require__(/*! ./chunck */ "./src/chunck.js");
+var websocket = __webpack_require__(/*! ./websockets */ "./src/websockets.js");
+var mouse_manager = __webpack_require__(/*! ./mouse_manager */ "./src/mouse_manager.js");
 
 var canvas;
 var ctx;
@@ -153,7 +150,7 @@ var grid_coordinats = {
 }
 
 // Запуск приложения после загрузки html страницы.
-if (document.readyState != 'loading'){
+if (document.readyState == 'complete'){
     app_start();
 } else {
     document.addEventListener('DOMContentLoaded', app_start);
@@ -162,6 +159,14 @@ if (document.readyState != 'loading'){
 
 function app_start(){
     canvas = document.getElementById('myCanvas');
+
+    if (!canvas){
+        // Вообще надо что бы система работала через коды ошибок.
+        // Коды ошибок с сообщениями должен выдавать сервер.
+        console.log('Не смог получить myCanvas!');
+        return 0;
+    }
+
     ctx = canvas.getContext('2d');
     websocket.connect();
     MousManager = new mouse_manager.MouseManager(canvas);
@@ -299,7 +304,6 @@ function set_chunck_state(){
     }
 }
 
-
 // Необходимо вывести ошибку.
 function send_error(message=""){
     var messageLabel = document.getElementById('messageLabel');
@@ -349,14 +353,17 @@ exports.setRoomCatalog = setRoomCatalog;
 
 /***/ }),
 
-/***/ "./js/src/mouse_manager.js":
-/*!*********************************!*\
-  !*** ./js/src/mouse_manager.js ***!
-  \*********************************/
+/***/ "./src/mouse_manager.js":
+/*!******************************!*\
+  !*** ./src/mouse_manager.js ***!
+  \******************************/
 /*! no static exports found */
 /***/ (function(module, exports, __webpack_require__) {
 
-var main = __webpack_require__(/*! ./main */ "./js/src/main.js")
+"use strict";
+
+
+var main = __webpack_require__(/*! ./main */ "./src/main.js")
 
 class MouseManager {
     // не понимаю почему импорт канваса не дает результата...
@@ -384,17 +391,17 @@ exports.MouseManager = MouseManager;
 
 /***/ }),
 
-/***/ "./js/src/websockets.js":
-/*!******************************!*\
-  !*** ./js/src/websockets.js ***!
-  \******************************/
+/***/ "./src/websockets.js":
+/*!***************************!*\
+  !*** ./src/websockets.js ***!
+  \***************************/
 /*! no static exports found */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 
-var main = __webpack_require__(/*! ./main */ "./js/src/main.js");
+var main = __webpack_require__(/*! ./main */ "./src/main.js");
 
 var ws
 
