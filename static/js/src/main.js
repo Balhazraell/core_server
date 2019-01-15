@@ -27,7 +27,7 @@ var grid_coordinats = {
 }
 
 // Запуск приложения после загрузки html страницы.
-if (document.readyState != 'loading'){
+if (document.readyState == 'complete'){
     app_start();
 } else {
     document.addEventListener('DOMContentLoaded', app_start);
@@ -36,6 +36,14 @@ if (document.readyState != 'loading'){
 
 function app_start(){
     canvas = document.getElementById('myCanvas');
+
+    if (!canvas){
+        // Вообще надо что бы система работала через коды ошибок.
+        // Коды ошибок с сообщениями должен выдавать сервер.
+        console.log('Не смог получить myCanvas!');
+        return 0;
+    }
+
     ctx = canvas.getContext('2d');
     websocket.connect();
     MousManager = new mouse_manager.MouseManager(canvas);
@@ -172,7 +180,6 @@ function set_chunck_state(){
         
     }
 }
-
 
 // Необходимо вывести ошибку.
 function send_error(message=""){
