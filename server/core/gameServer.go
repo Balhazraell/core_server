@@ -1,8 +1,12 @@
 package core
 
 import (
+	"log"
+
 	"../api"
 	"../logger"
+
+	"github.com/streadway/amqp"
 )
 
 // В первой итерации вебсокеты будут передавать сообщения на прямую в gameServer.
@@ -38,6 +42,60 @@ func GameServerStart() {
 	}
 
 	go GameServer.loop()
+
+	//-----------------------------------------------------------------------
+	// Создадим связь с брокером.
+	conn, err := amqp.Dial("amqp://macroserv:12345@localhost:15672/")
+	if err != nil {
+		logger.ErrorPrintf("Failed to connect to RabbitMQ: %s", err)
+	}
+	defer conn.Close()
+
+	// Устанавливаем соединение с брокером.
+	ch, err := conn.Channel()
+	if err != nil {
+		logger.ErrorPrintf("Failed to open a channel: %s", err)
+	}
+	defer ch.Close()
+
+	// Создаем очередь из которой будем поулчать сообщения.
+	// Делается всегда и там где принимается и там где отправляется,
+	// если очереди нет то сообщение просто проигнорится,
+	// но если очередь оздана хотя бы раз, то повторно создана не будет.
+	// так как это очередь для того что бы слушать сообщения приходящие нам,
+	// не надо его запоминать, у нас будет горутина крутится...
+	queue, err := ch.QueueDeclare(
+		"gameCore", // name
+		false,      // durable
+		false,      // delete when usused
+		false,      // exclusive
+		false,      // no-wait
+		nil,        // arguments
+	)
+	if err != nil {
+		logger.ErrorPrintf("Failed to declare a queue: %s", err)
+	}
+
+	// Теперь создаем подписчика.
+	msgs, err := ch.Consume(
+		queue.Name, // queue
+		"",         // consumer
+		true,       // auto-ack
+		false,      // exclusive
+		false,      // no-local
+		false,      // no-wait
+		nil,        // args
+	)
+	if err != nil {
+		logger.ErrorPrintf("Failed to register a consumer: %s", err)
+	}
+
+	// Запускаем горутину которая будет "слушать" очередь.
+	go func() {
+		for d := range msgs {
+			log.Printf("Received a message: %s", d.Body)
+		}
+	}()
 
 	// создадим несколько комнат, для тестирования.
 	room1 := StartNewRoom(1)

@@ -2,8 +2,12 @@ package core
 
 import (
 	"encoding/json"
+	"fmt"
+	"log"
 
 	"../logger"
+
+	"github.com/streadway/amqp"
 )
 
 /*
@@ -26,9 +30,10 @@ type Chunc struct {
 // Комната живет своей жизнью.
 // Комната состоит из частей (Chunc)
 type Room struct {
-	ID      int
-	Map     map[int]*Chunc
-	clients map[int]*Client
+	ID        int
+	Map       map[int]*Chunc
+	clients   map[int]*Client
+	brockerCh *amqp.Channel
 
 	// Переменные логики.
 	GameState int // Делаем крестики нолики, по этому 2 состояния - ходит один потом другой.
@@ -78,9 +83,57 @@ func StartNewRoom(id int) *Room {
 	newRoom.GameState = 1
 	newRoom.shutdownLoop = make(chan bool)
 	newRoom.createMap()
-	// newRoom.
 
 	go newRoom.loop()
+
+	// Сейчас создадим полноценное соединение для RabbitMQ
+	conn, err := amqp.Dial("amqp://macroserv:12345@localhost:15672/")
+	if err != nil {
+		logger.ErrorPrintf("Failed to connect to RabbitMQ: %s", err)
+	}
+	defer conn.Close()
+
+	// Создаем канал.
+	ch, err := conn.Channel()
+	if err != nil {
+		logger.ErrorPrintf("Failed to open a channel: %s", err)
+	}
+	defer ch.Close()
+
+	// Сначала создаем очередь на получение сообщений, назвние
+	// будет формироваться из имени комнаты, в нашем случае из id
+	queue, err := ch.QueueDeclare(
+		fmt.Sprintf("room_%d", id), // name
+		false,                      // durable
+		false,                      // delete when usused
+		false,                      // exclusive
+		false,                      // no-wait
+		nil,                        // arguments
+	)
+	if err != nil {
+		logger.ErrorPrintf("Failed to declare a queue: %s", err)
+	}
+
+	// Теперь создаем подписчика.
+	msgs, err := ch.Consume(
+		queue.Name, // queue
+		"",         // consumer
+		true,       // auto-ack
+		false,      // exclusive
+		false,      // no-local
+		false,      // no-wait
+		nil,        // args
+	)
+	if err != nil {
+		logger.ErrorPrintf("Failed to register a consumer: %s", err)
+	}
+
+	// Мониторим очередь на наличие сообщений.
+	go func() {
+		for d := range msgs {
+			log.Printf("Received a message: %s", d.Body)
+		}
+	}()
 
 	return &newRoom
 }
