@@ -43,7 +43,7 @@ func GameServerStart() {
 
 	go GameServer.loop()
 
-	//-----------------------------------------------------------------------
+	//--------------------------------- Owerall ----------------------------
 	// Создадим связь с брокером.
 	conn, err := amqp.Dial("amqp://macroserv:12345@localhost:15672/")
 	if err != nil {
@@ -58,6 +58,35 @@ func GameServerStart() {
 	}
 	defer ch.Close()
 
+	// Точка доступа должна быть создана, до того как создана очередь.
+	// так как слать сообщения в несучествующую точку доступа запрещено!
+	err = ch.ExchangeDeclare(
+		"core",   // name
+		"direct", // type
+		true,     // durable
+		false,    // auto-deleted
+		false,    // internal
+		false,    // no-wait
+		nil,      // arguments
+	)
+	if err != nil {
+		logger.ErrorPrintf("Failed to declare an exchange: %s", err)
+	}
+
+	err = ch.ExchangeDeclare(
+		"rooms",  // name
+		"direct", // type
+		true,     // durable
+		false,    // auto-deleted
+		false,    // internal
+		false,    // no-wait
+		nil,      // arguments
+	)
+	if err != nil {
+		logger.ErrorPrintf("Failed to declare an exchange: %s", err)
+	}
+
+	//--------------------------------- For core ----------------------------
 	// Создаем очередь из которой будем поулчать сообщения.
 	// Делается всегда и там где принимается и там где отправляется,
 	// если очереди нет то сообщение просто проигнорится,
@@ -65,15 +94,27 @@ func GameServerStart() {
 	// так как это очередь для того что бы слушать сообщения приходящие нам,
 	// не надо его запоминать, у нас будет горутина крутится...
 	queue, err := ch.QueueDeclare(
-		"gameCore", // name
-		false,      // durable
-		false,      // delete when usused
-		false,      // exclusive
-		false,      // no-wait
-		nil,        // arguments
+		"сore", // name
+		false,  // durable
+		false,  // delete when usused
+		false,  // exclusive
+		false,  // no-wait
+		nil,    // arguments
 	)
 	if err != nil {
 		logger.ErrorPrintf("Failed to declare a queue: %s", err)
+	}
+
+	err = ch.QueueBind(
+		queue.Name, // queue name
+		queue.Name, // routing key (binding_key)
+		// TODO: наверно надо вынести в отдельную переменную.
+		"core", // exchange
+		false,
+		nil,
+	)
+	if err != nil {
+		logger.ErrorPrintf("Failed to bind a queue: %s", err)
 	}
 
 	// Теперь создаем подписчика.

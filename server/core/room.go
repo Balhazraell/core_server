@@ -86,6 +86,7 @@ func StartNewRoom(id int) *Room {
 
 	go newRoom.loop()
 
+	//--------------------------------- Owerall ----------------------------
 	// Сейчас создадим полноценное соединение для RabbitMQ
 	conn, err := amqp.Dial("amqp://macroserv:12345@localhost:15672/")
 	if err != nil {
@@ -100,6 +101,35 @@ func StartNewRoom(id int) *Room {
 	}
 	defer ch.Close()
 
+	// Точка доступа должна быть создана, до того как создана очередь.
+	// так как слать сообщения в несучествующую точку доступа запрещено!
+	err = ch.ExchangeDeclare(
+		"core",   // name
+		"direct", // type
+		true,     // durable
+		false,    // auto-deleted
+		false,    // internal
+		false,    // no-wait
+		nil,      // arguments
+	)
+	if err != nil {
+		logger.ErrorPrintf("Failed to declare an exchange: %s", err)
+	}
+
+	err = ch.ExchangeDeclare(
+		"rooms",  // name
+		"direct", // type
+		true,     // durable
+		false,    // auto-deleted
+		false,    // internal
+		false,    // no-wait
+		nil,      // arguments
+	)
+	if err != nil {
+		logger.ErrorPrintf("Failed to declare an exchange: %s", err)
+	}
+
+	//--------------------------------- For Room ----------------------------
 	// Сначала создаем очередь на получение сообщений, назвние
 	// будет формироваться из имени комнаты, в нашем случае из id
 	queue, err := ch.QueueDeclare(
@@ -112,6 +142,18 @@ func StartNewRoom(id int) *Room {
 	)
 	if err != nil {
 		logger.ErrorPrintf("Failed to declare a queue: %s", err)
+	}
+
+	// Связываем комнату и точку доступа.
+	err = ch.QueueBind(
+		queue.Name, // queue name
+		queue.Name, // routing key (binding_key)
+		"rooms",    // exchange
+		false,
+		nil,
+	)
+	if err != nil {
+		logger.ErrorPrintf("Failed to bind a queue: %s", err)
 	}
 
 	// Теперь создаем подписчика.
