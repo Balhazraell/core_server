@@ -88,7 +88,7 @@ func StartNewRoom(id int) *Room {
 
 	//--------------------------------- Owerall ----------------------------
 	// Сейчас создадим полноценное соединение для RabbitMQ
-	conn, err := amqp.Dial("amqp://macroserv:12345@localhost:15672/")
+	conn, err := amqp.Dial("amqp://macroserv:12345@localhost:5672/macroserv")
 	if err != nil {
 		logger.ErrorPrintf("Failed to connect to RabbitMQ: %s", err)
 	}
@@ -134,7 +134,7 @@ func StartNewRoom(id int) *Room {
 	// будет формироваться из имени комнаты, в нашем случае из id
 	queue, err := ch.QueueDeclare(
 		fmt.Sprintf("room_%d", id), // name
-		false,                      // durable
+		true,                       // durable
 		false,                      // delete when usused
 		false,                      // exclusive
 		false,                      // no-wait
@@ -176,6 +176,24 @@ func StartNewRoom(id int) *Room {
 			log.Printf("Received a message: %s", d.Body)
 		}
 	}()
+
+	// ОТПРАВКА СООБЩЕНИЯ!
+	body := fmt.Sprintf("Room with id=%d is created!", id)
+
+	err = ch.Publish(
+		"core", // exchange
+		"сore", // routing key
+		false,  // mandatory
+		false,
+		amqp.Publishing{
+			DeliveryMode: amqp.Persistent,
+			ContentType:  "text/plain",
+			Body:         []byte(body),
+		})
+
+	if err != nil {
+		logger.ErrorPrintf("Failed to publish a message: %s", err)
+	}
 
 	return &newRoom
 }

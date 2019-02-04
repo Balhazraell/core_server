@@ -45,7 +45,7 @@ func GameServerStart() {
 
 	//--------------------------------- Owerall ----------------------------
 	// Создадим связь с брокером.
-	conn, err := amqp.Dial("amqp://macroserv:12345@localhost:15672/")
+	conn, err := amqp.Dial("amqp://macroserv:12345@localhost:5672/macroserv")
 	if err != nil {
 		logger.ErrorPrintf("Failed to connect to RabbitMQ: %s", err)
 	}
@@ -95,7 +95,7 @@ func GameServerStart() {
 	// не надо его запоминать, у нас будет горутина крутится...
 	queue, err := ch.QueueDeclare(
 		"сore", // name
-		false,  // durable
+		true,   // durable
 		false,  // delete when usused
 		false,  // exclusive
 		false,  // no-wait
@@ -134,7 +134,7 @@ func GameServerStart() {
 	// Запускаем горутину которая будет "слушать" очередь.
 	go func() {
 		for d := range msgs {
-			log.Printf("Received a message: %s", d.Body)
+			log.Printf("RabbitMQ message, core: %s", d.Body)
 		}
 	}()
 
