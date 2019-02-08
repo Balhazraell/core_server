@@ -15,6 +15,7 @@ const channalBufSize = 100
 var maxID int
 
 // IncomingMessage - Структура описывающая формат входящего сообщения от клиента.
+// TODO: Если у отправленных и пришедших сообщений теперь общий вид то надо сделать одну структуру.
 type IncomingMessage struct {
 	HandlerName string `json:"handler_name"`
 	Data        string `json:"data"`

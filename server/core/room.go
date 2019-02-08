@@ -43,6 +43,12 @@ type Room struct {
 	updateMap    chan bool
 }
 
+// TODO: потом надо перемеименовать в просто message.
+type roomMessage struct {
+	HandlerName string `json:"handler_name"`
+	Data        string `json:"data"`
+}
+
 func (room *Room) createMap() {
 	var step = 100
 	var y = 0

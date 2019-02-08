@@ -25,8 +25,16 @@ type Client struct {
 type gameServer struct {
 	Clients map[int]*Client
 	Rooms   map[int]*Room
+	// TODO: нужна очередь сопаставления id и названия комнаты.
+	// QeueRoomsNames map[string]
 
 	shutdownLoop chan bool
+}
+
+// TODO: потом надо перемеименовать в просто message.
+type coreMessage struct {
+	HandlerName string `json:"handler_name"`
+	Data        string `json:"data"`
 }
 
 // GameServerStart - метод запуска игрового сервера.
@@ -275,3 +283,6 @@ func (server *gameServer) getRoomsIDsList() []int {
 
 	return roomsIDs
 }
+
+
+func 
