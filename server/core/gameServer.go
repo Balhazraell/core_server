@@ -1,7 +1,9 @@
 package core
 
 import (
-	"log"
+	"encoding/json"
+	"fmt"
+	"io"
 
 	"../api"
 	"../logger"
@@ -15,6 +17,11 @@ import (
 // GameServer - singletone для работы с care частью сервера.GameServer
 var GameServer gameServer
 
+// CoreMetods - набор методов вызываемых у core части.(по сути это надор API)
+var CoreMetods = map[string]func(string){
+	"roomConnect": GameServer.RoomConnect,
+}
+
 // Client структура описывающая связь клиента и комнаты в которой он находится.
 // Считается что пользователь не может быть в не комнат - тоесть хотя бы в какой-то он точно есть.
 type Client struct {
@@ -23,10 +30,9 @@ type Client struct {
 }
 
 type gameServer struct {
-	Clients map[int]*Client
-	Rooms   map[int]*Room
-	// TODO: нужна очередь сопаставления id и названия комнаты.
-	// QeueRoomsNames map[string]
+	Clients        map[int]*Client
+	Rooms          map[int]*Room
+	QeueRoomsNames map[int]string
 
 	shutdownLoop chan bool
 }
@@ -41,11 +47,13 @@ type coreMessage struct {
 func GameServerStart() {
 	var clients = make(map[int]*Client)
 	var rooms = make(map[int]*Room)
+	var qeueRoomsNames = make(map[int]string)
 	var shutdownLoop = make(chan bool)
 
 	GameServer = gameServer{
 		clients,
 		rooms,
+		qeueRoomsNames,
 		shutdownLoop,
 	}
 
@@ -142,15 +150,28 @@ func GameServerStart() {
 	// Запускаем горутину которая будет "слушать" очередь.
 	go func() {
 		for d := range msgs {
-			log.Printf("RabbitMQ message, core: %s", d.Body)
+			var msg coreMessage
+			err := json.Unmarshal(d.Body, &msg)
+
+			if err == io.EOF {
+				continue
+			} else if err != nil {
+				logger.ErrorPrintf("Проблема чтения сообщения от комнаты : %v.", err)
+				continue
+			} else {
+				// TODO: можем упасть при вызове не верного метода - надо обработать!
+				// Допустим метод которого нет в списке.
+				// TODO: Написать тесты для этого метода.
+				CoreMetods[msg.HandlerName](msg.Data)
+			}
 		}
 	}()
 
 	// создадим несколько комнат, для тестирования.
 	room1 := StartNewRoom(1)
 	room2 := StartNewRoom(2)
-	GameServer.Rooms[room1.ID] = room1
-	GameServer.Rooms[room2.ID] = room2
+	// GameServer.Rooms[room1.ID] = room1
+	// GameServer.Rooms[room2.ID] = room2
 
 }
 
@@ -284,5 +305,11 @@ func (server *gameServer) getRoomsIDsList() []int {
 	return roomsIDs
 }
 
-
-func 
+// --------------------------------------------------------
+// Тут будет набор методов вызываемый через RabbitMQ потом это должно стать API этого модуля.
+func (server *gameServer) RoomConnect(message string) {
+	var ID int
+	roomID := json.Unmarshal([]byte(message), &ID)
+	// TODO не понятно на сколько хорошая практика.
+	GameServer.QeueRoomsNames[roomID] = fmt.Sprintf("room_%d", roomID)
+}
