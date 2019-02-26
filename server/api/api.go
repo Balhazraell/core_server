@@ -50,7 +50,10 @@ type UpdateClientsMapStruct struct {
 type NewClientIsConnectedStruct struct {
 	ClientID     int
 	ClientMap    []byte
-	RoomsCatalog []int
+	RoomsCatalog struct {
+		ID   int
+		Name string
+	}
 }
 
 type SendErrorToСlientStruct struct {

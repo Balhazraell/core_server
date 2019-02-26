@@ -1,11 +1,11 @@
-package core
+package room
 
 import (
 	"encoding/json"
 	"fmt"
 	"log"
 
-	"../logger"
+	"../../logger"
 
 	"github.com/streadway/amqp"
 )
@@ -30,9 +30,9 @@ type Chunc struct {
 // Комната живет своей жизнью.
 // Комната состоит из частей (Chunc)
 type Room struct {
-	ID        int
-	Map       map[int]*Chunc
-	clients   map[int]*Client
+	ID  int
+	Map map[int]*Chunc
+	// clients   map[int]*Client
 	brockerCh *amqp.Channel
 
 	// Переменные логики.
@@ -81,7 +81,7 @@ func (room *Room) createMap() {
 
 // StartNewRoom - метод запуска новой комнаты.
 // На вход подается id комнаты котурую надо создать.
-func StartNewRoom(id int) *Room {
+func StartNewRoom(id int) {
 	newRoom := Room{}
 	newRoom.ID = id
 	newRoom.Map = make(map[int]*Chunc)
@@ -91,90 +91,6 @@ func StartNewRoom(id int) *Room {
 	newRoom.createMap()
 
 	go newRoom.loop()
-
-	//--------------------------------- Owerall ----------------------------
-	// Сейчас создадим полноценное соединение для RabbitMQ
-	conn, err := amqp.Dial("amqp://macroserv:12345@localhost:5672/macroserv")
-	if err != nil {
-		logger.ErrorPrintf("Failed to connect to RabbitMQ: %s", err)
-	}
-	defer conn.Close()
-
-	// Создаем канал.
-	ch, err := conn.Channel()
-	if err != nil {
-		logger.ErrorPrintf("Failed to open a channel: %s", err)
-	}
-	defer ch.Close()
-
-	// Точка доступа должна быть создана, до того как создана очередь.
-	// так как слать сообщения в несучествующую точку доступа запрещено!
-	err = ch.ExchangeDeclare(
-		"core",   // name
-		"direct", // type
-		true,     // durable
-		false,    // auto-deleted
-		false,    // internal
-		false,    // no-wait
-		nil,      // arguments
-	)
-	if err != nil {
-		logger.ErrorPrintf("Failed to declare an exchange: %s", err)
-	}
-
-	err = ch.ExchangeDeclare(
-		"rooms",  // name
-		"direct", // type
-		true,     // durable
-		false,    // auto-deleted
-		false,    // internal
-		false,    // no-wait
-		nil,      // arguments
-	)
-	if err != nil {
-		logger.ErrorPrintf("Failed to declare an exchange: %s", err)
-	}
-
-	//--------------------------------- For Room ----------------------------
-	// Сначала создаем очередь на получение сообщений, назвние
-	// будет формироваться из имени комнаты, в нашем случае из id
-	queue, err := ch.QueueDeclare(
-		fmt.Sprintf("room_%d", id), // name
-		true,                       // durable
-		false,                      // delete when usused
-		false,                      // exclusive
-		false,                      // no-wait
-		nil,                        // arguments
-	)
-	if err != nil {
-		logger.ErrorPrintf("Failed to declare a queue: %s", err)
-	}
-
-	// Связываем комнату и точку доступа.
-	err = ch.QueueBind(
-		queue.Name, // queue name
-		queue.Name, // routing key (binding_key)
-		"rooms",    // exchange
-		false,
-		nil,
-	)
-	if err != nil {
-		logger.ErrorPrintf("Failed to bind a queue: %s", err)
-	}
-
-	// Теперь создаем подписчика.
-	msgs, err := ch.Consume(
-		queue.Name, // queue
-		"",         // consumer
-		true,       // auto-ack
-		false,      // exclusive
-		false,      // no-local
-		false,      // no-wait
-		nil,        // args
-	)
-	if err != nil {
-		logger.ErrorPrintf("Failed to register a consumer: %s", err)
-	}
 
 	// Мониторим очередь на наличие сообщений.
 	go func() {
@@ -186,22 +102,6 @@ func StartNewRoom(id int) *Room {
 	// ОТПРАВКА СООБЩЕНИЯ!
 	body := fmt.Sprintf("Room with id=%d is created!", id)
 
-	err = ch.Publish(
-		"core", // exchange
-		"сore", // routing key
-		false,  // mandatory
-		false,
-		amqp.Publishing{
-			DeliveryMode: amqp.Persistent,
-			ContentType:  "text/plain",
-			Body:         []byte(body),
-		})
-
-	if err != nil {
-		logger.ErrorPrintf("Failed to publish a message: %s", err)
-	}
-
-	return &newRoom
 }
 
 // Stop - Метод принадлежит Room.

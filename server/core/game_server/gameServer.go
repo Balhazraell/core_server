@@ -25,13 +25,18 @@ var CoreMetods = map[string]func(string){
 // Client структура описывающая связь клиента и комнаты в которой он находится.
 // Считается что пользователь не может быть в не комнат - тоесть хотя бы в какой-то он точно есть.
 type Client struct {
+	ID     int
+	RoomID int
+}
+
+type RoomIdAndNameStruct struct {
 	ID   int
-	Room *Room
+	Name string
 }
 
 type gameServer struct {
-	Clients        map[int]*Client
-	Rooms          map[int]*Room
+	Clients map[int]*Client
+	// Rooms          map[int]*Room
 	QeueRoomsNames map[int]string
 
 	shutdownLoop chan bool
@@ -46,13 +51,13 @@ type coreMessage struct {
 // GameServerStart - метод запуска игрового сервера.
 func GameServerStart() {
 	var clients = make(map[int]*Client)
-	var rooms = make(map[int]*Room)
+	// var rooms = make(map[int]*Room)
 	var qeueRoomsNames = make(map[int]string)
 	var shutdownLoop = make(chan bool)
 
 	GameServer = gameServer{
 		clients,
-		rooms,
+		// rooms,
 		qeueRoomsNames,
 		shutdownLoop,
 	}
@@ -167,12 +172,10 @@ func GameServerStart() {
 		}
 	}()
 
-	// создадим несколько комнат, для тестирования.
-	room1 := StartNewRoom(1)
-	room2 := StartNewRoom(2)
-	// GameServer.Rooms[room1.ID] = room1
-	// GameServer.Rooms[room2.ID] = room2
-
+	// TODO: Сейчас создаем несколько комнат.
+	// В сервисной архитектуре, это будем делать не мы.
+	StartNewRoom(1)
+	StartNewRoom(2)
 }
 
 // Stop - метод завершения работы игрового сервера.
@@ -217,23 +220,30 @@ func (server *gameServer) newConnect(clietnID int) {
 
 	logger.InfoPrint("На сервер пришел новый пользователь.")
 
-	room, ok := server.Rooms[1]
-	if !ok {
-		logger.WarningPrintf("Попытка присоединится к комнате которой нет: Клиет - %v", clietnID)
-		return
-	}
+	// room, ok := server.Rooms[1]
+	// if !ok {
+	// 	logger.WarningPrintf("Попытка присоединится к комнате которой нет: Клиет - %v", clietnID)
+	// 	return
+	// }
+
+	// TODO:
+	// Тут должен быть метод выдающий id свободной комнаты.
+	// Необходимо подумать можно ли динамически растить новые комнаты.
+	// Можно создать определенное количество комнат и добавлять пользователей как зрителей.
 
 	client := Client{
 		clietnID,
-		room,
+		1,
 	}
 
 	GameServer.Clients[client.ID] = &client
 
+	// TODO: мы должны послать запрос комнате можно ли в неё подключится и если нет, то попытаться подключтья к другой комнате.
+	// Если свободных комнат нет, надо будет их создавать...
 	newClientIsConnectedStruct := api.NewClientIsConnectedStruct{
 		ClientID:     clietnID,
 		ClientMap:    room.ClientConnect(&client),
-		RoomsCatalog: server.getRoomsIDsList(),
+		RoomsCatalog: server.getRoomsIDAndName(),
 	}
 
 	api.API.NewClientIsConnectedChl <- newClientIsConnectedStruct
@@ -296,20 +306,28 @@ func (server *gameServer) changeRoom(clientID int, newRoomID int) {
 	}
 }
 
-func (server *gameServer) getRoomsIDsList() []int {
-	roomsIDs := make([]int, 0, len(server.Rooms))
-	for k := range server.Rooms {
-		roomsIDs = append(roomsIDs, k)
+// getRoomsIDAndName - Возвращает список имен комнат
+func (server *gameServer) getRoomsIDAndName() []RoomIdAndNameStruct {
+	// TODO: должна возвращаться структура [[id, name]]
+	roomsIDAndNames := make([]RoomIdAndNameStruct, 0, len(server.QeueRoomsNames))
+	for k := range server.QeueRoomsNames {
+		newRoomIDAndNameStruct := RoomIdAndNameStruct{ID: k, Name: server.QeueRoomsNames[k]}
+		roomsIDAndNames = append(roomsIDAndNames, newRoomIDAndNameStruct)
 	}
 
-	return roomsIDs
+	return roomsIDAndNames
 }
 
 // --------------------------------------------------------
 // Тут будет набор методов вызываемый через RabbitMQ потом это должно стать API этого модуля.
 func (server *gameServer) RoomConnect(message string) {
+	// TODO: должно передоваться имя и ID комнаты... (Надо подумать над этим...)
 	var ID int
-	roomID := json.Unmarshal([]byte(message), &ID)
+	err := json.Unmarshal([]byte(message), &ID)
+
+	if err != nil {
+		logger.ErrorPrintf("Failed unmarshal room connect message: %s", err)
+	}
 	// TODO не понятно на сколько хорошая практика.
-	GameServer.QeueRoomsNames[roomID] = fmt.Sprintf("room_%d", roomID)
+	GameServer.QeueRoomsNames[ID] = fmt.Sprintf("room_%d", ID)
 }
