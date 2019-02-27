@@ -1,6 +1,11 @@
 package room
 
-// Перечень доступных API методов.
+// APIMetods - Перечень доступных API методов.
 var APIMetods = map[string]func(string){
-	"roomConnect": RoomConnect,
+	"ClientConnect": APIClientConnect,
+}
+
+// APIClientConnect - Подключение нового пользователя.
+func APIClientConnect(message string) {
+
 }

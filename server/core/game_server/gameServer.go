@@ -1,14 +1,14 @@
-package core
+package game_server
 
 import (
 	"encoding/json"
 	"fmt"
-	"io"
 
-	"../api"
-	"../logger"
+	"../../api"
+	"../../logger"
 
-	"github.com/streadway/amqp"
+	// TODO: временное решение для проерки работы комнат.
+	"../room"
 )
 
 // В первой итерации вебсокеты будут передавать сообщения на прямую в gameServer.
@@ -35,8 +35,7 @@ type RoomIdAndNameStruct struct {
 }
 
 type gameServer struct {
-	Clients map[int]*Client
-	// Rooms          map[int]*Room
+	Clients        map[int]*Client
 	QeueRoomsNames map[int]string
 
 	shutdownLoop chan bool
@@ -51,131 +50,21 @@ type coreMessage struct {
 // GameServerStart - метод запуска игрового сервера.
 func GameServerStart() {
 	var clients = make(map[int]*Client)
-	// var rooms = make(map[int]*Room)
 	var qeueRoomsNames = make(map[int]string)
 	var shutdownLoop = make(chan bool)
 
 	GameServer = gameServer{
 		clients,
-		// rooms,
 		qeueRoomsNames,
 		shutdownLoop,
 	}
 
 	go GameServer.loop()
 
-	//--------------------------------- Owerall ----------------------------
-	// Создадим связь с брокером.
-	conn, err := amqp.Dial("amqp://macroserv:12345@localhost:5672/macroserv")
-	if err != nil {
-		logger.ErrorPrintf("Failed to connect to RabbitMQ: %s", err)
-	}
-	defer conn.Close()
-
-	// Устанавливаем соединение с брокером.
-	ch, err := conn.Channel()
-	if err != nil {
-		logger.ErrorPrintf("Failed to open a channel: %s", err)
-	}
-	defer ch.Close()
-
-	// Точка доступа должна быть создана, до того как создана очередь.
-	// так как слать сообщения в несучествующую точку доступа запрещено!
-	err = ch.ExchangeDeclare(
-		"core",   // name
-		"direct", // type
-		true,     // durable
-		false,    // auto-deleted
-		false,    // internal
-		false,    // no-wait
-		nil,      // arguments
-	)
-	if err != nil {
-		logger.ErrorPrintf("Failed to declare an exchange: %s", err)
-	}
-
-	err = ch.ExchangeDeclare(
-		"rooms",  // name
-		"direct", // type
-		true,     // durable
-		false,    // auto-deleted
-		false,    // internal
-		false,    // no-wait
-		nil,      // arguments
-	)
-	if err != nil {
-		logger.ErrorPrintf("Failed to declare an exchange: %s", err)
-	}
-
-	//--------------------------------- For core ----------------------------
-	// Создаем очередь из которой будем поулчать сообщения.
-	// Делается всегда и там где принимается и там где отправляется,
-	// если очереди нет то сообщение просто проигнорится,
-	// но если очередь оздана хотя бы раз, то повторно создана не будет.
-	// так как это очередь для того что бы слушать сообщения приходящие нам,
-	// не надо его запоминать, у нас будет горутина крутится...
-	queue, err := ch.QueueDeclare(
-		"сore", // name
-		true,   // durable
-		false,  // delete when usused
-		false,  // exclusive
-		false,  // no-wait
-		nil,    // arguments
-	)
-	if err != nil {
-		logger.ErrorPrintf("Failed to declare a queue: %s", err)
-	}
-
-	err = ch.QueueBind(
-		queue.Name, // queue name
-		queue.Name, // routing key (binding_key)
-		// TODO: наверно надо вынести в отдельную переменную.
-		"core", // exchange
-		false,
-		nil,
-	)
-	if err != nil {
-		logger.ErrorPrintf("Failed to bind a queue: %s", err)
-	}
-
-	// Теперь создаем подписчика.
-	msgs, err := ch.Consume(
-		queue.Name, // queue
-		"",         // consumer
-		true,       // auto-ack
-		false,      // exclusive
-		false,      // no-local
-		false,      // no-wait
-		nil,        // args
-	)
-	if err != nil {
-		logger.ErrorPrintf("Failed to register a consumer: %s", err)
-	}
-
-	// Запускаем горутину которая будет "слушать" очередь.
-	go func() {
-		for d := range msgs {
-			var msg coreMessage
-			err := json.Unmarshal(d.Body, &msg)
-
-			if err == io.EOF {
-				continue
-			} else if err != nil {
-				logger.ErrorPrintf("Проблема чтения сообщения от комнаты : %v.", err)
-				continue
-			} else {
-				// TODO: можем упасть при вызове не верного метода - надо обработать!
-				// Допустим метод которого нет в списке.
-				// TODO: Написать тесты для этого метода.
-				CoreMetods[msg.HandlerName](msg.Data)
-			}
-		}
-	}()
-
 	// TODO: Сейчас создаем несколько комнат.
 	// В сервисной архитектуре, это будем делать не мы.
-	StartNewRoom(1)
-	StartNewRoom(2)
+	room.StartNewRoom(1)
+	room.StartNewRoom(2)
 }
 
 // Stop - метод завершения работы игрового сервера.
