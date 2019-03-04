@@ -2,10 +2,19 @@ package room
 
 // APIMetods - Перечень доступных API методов.
 var APIMetods = map[string]func(string){
-	"ClientConnect": APIClientConnect,
+	"ClientConnect":    APIClientConnect,
+	"ClientDisconnect": APIClientDisconnect,
+	"SetChunckState":   APISetChunckState,
 }
 
-// APIClientConnect - Подключение нового пользователя.
 func APIClientConnect(message string) {
+
+}
+
+func APIClientDisconnect(message string) {
+
+}
+
+func APISetChunckState(message string) {
 
 }

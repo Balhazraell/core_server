@@ -12,10 +12,6 @@ import (
 
 /*
 	У комнат несколько методов которые по сути должны быть API:
-	StartNewRoom,
-	Stop,
-	ClientConnect,
-	ClientDisconnect,
 	SetChunckState,
 */
 
@@ -32,7 +28,7 @@ type Chunc struct {
 type Room struct {
 	ID  int
 	Map map[int]*Chunc
-	// clients   map[int]*Client
+	clients   []int
 	brockerCh *amqp.Channel
 
 	// Переменные логики.
@@ -85,7 +81,7 @@ func StartNewRoom(id int) {
 	newRoom := Room{}
 	newRoom.ID = id
 	newRoom.Map = make(map[int]*Chunc)
-	newRoom.clients = make(map[int]*Client)
+	newRoom.clients = int[]
 	newRoom.GameState = 1
 	newRoom.shutdownLoop = make(chan bool)
 	newRoom.createMap()
@@ -111,24 +107,6 @@ func (room *Room) Stop() {
 	room.shutdownLoop <- true
 }
 
-// ClientConnect - Метод принадлежит Room.
-// Метод подключения нового пользователя к комнате.
-func (room *Room) ClientConnect(client *Client) []byte {
-	// Необходимо добавить в комнату пользователя.
-	logger.InfoPrintf("К комнате %v подключился новый клиент с id=%v.", room.ID, client.ID)
-	room.clients[client.ID] = client
-	// ВОобще не при подключении надо возвращать карту, это надо делать по специальной функции,
-	// Наверно надо отдавать в loop в канал id пользователя, кому надо задать карту...
-	gameMap, err := json.Marshal(room.Map)
-
-	if err != nil {
-		// TODO: тут надо сделать так, что бы функция завершилась ничего не возвращая...
-		logger.WarningPrintf("При формировнии json при подключении нового клиента произошла ошибка %v.", err)
-	}
-
-	return gameMap
-}
-
 func (room *Room) loop() {
 	defer func() {
 		logger.InfoPrintf("Комната с id=%v закончила работу.", room.ID)
@@ -152,25 +130,6 @@ func (room *Room) loop() {
 	}
 }
 
-// SetChunckState - Метод принадлежит Room.
-// Метод вызываемый при попытке пользователя что-то сделать с участком карты.
-func (room *Room) SetChunckState(clientID int, chunkID int) {
-	if room.Map[chunkID].State == 0 {
-		room.Map[chunkID].State = room.GameState
-
-		if room.GameState == 1 {
-			room.GameState = 2
-		} else {
-			room.GameState = 1
-		}
-
-		room.updateClientsMap()
-	} else {
-		logger.WarningPrintf("Попытка изменить значение в поле с изменненым значеним клиентом с id=%v.", clientID)
-		GameServer.SendErrorToСlient(clientID, "Нельзя изменить значение!")
-	}
-}
-
 func (room *Room) updateClientsMap() {
 	logger.InfoPrint("Обновление карт пользователей.")
 	gameMap, err := json.Marshal(room.Map)
@@ -188,13 +147,48 @@ func (room *Room) updateClientsMap() {
 	GameServer.UpdateClientsMap(gameMap, clientsIDs)
 }
 
-// ClientDisconnect метод отключающий пользователя от этой комнаты.
-func (room *Room) ClientDisconnect(clientID int) {
+//--------------------- Обработка API -----------------------//
+func (room *Room) clientConnect(clientID int){
+	// Необходимо добавить в комнату пользователя.
+	logger.InfoPrintf("К комнате %v подключился новый клиент с id=%v.", room.ID, clientID)
+	room.clients[clientID] = client
+	// ВОобще не при подключении надо возвращать карту, это надо делать по специальной функции,
+	// Наверно надо отдавать в loop в канал id пользователя, кому надо задать карту...
+	gameMap, err := json.Marshal(room.Map)
+
+	if err != nil {
+		// TODO: тут надо сделать так, что бы функция завершилась ничего не возвращая...
+		logger.WarningPrintf("При формировнии json при подключении нового клиента произошла ошибка %v.", err)
+	}
+
+	return gameMap
+}
+
+func (room *Room) clientDisconnect(clientID int) {
 	_, ok := room.clients[clientID]
 	if ok {
 		logger.InfoPrintf("Удаляем клиента id=%v из комнаты id=%v.", clientID, room.ID)
 		delete(room.clients, clientID)
 	} else {
 		logger.WarningPrintf("Попытка удалить клиента из комнаты, корого уже нет: id=%v.", clientID)
+	}
+}
+
+// SetChunckState - Метод принадлежит Room.
+// Метод вызываемый при попытке пользователя что-то сделать с участком карты.
+func (room *Room) SetChunckState(clientID int, chunkID int) {
+	if room.Map[chunkID].State == 0 {
+		room.Map[chunkID].State = room.GameState
+
+		if room.GameState == 1 {
+			room.GameState = 2
+		} else {
+			room.GameState = 1
+		}
+
+		room.updateClientsMap()
+	} else {
+		logger.WarningPrintf("Попытка изменить значение в поле с изменненым значеним клиентом с id=%v.", clientID)
+		GameServer.SendErrorToСlient(clientID, "Нельзя изменить значение!")
 	}
 }
