@@ -20,19 +20,28 @@ func init() {
 	http.HandleFunc("/", returnIndex)
 }
 
-func returnIndex(response http.ResponseWriter, request *http.Request) {
-	t, err := template.ParseFiles("../static/index.html")
+func returnIndex(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/html")
 
-	if err != nil {
-		fmt.Fprintf(response, err.Error())
+	if r.URL.Path == "/" {
+		t, err := template.ParseFiles("../static/index.html")
+		if err != nil {
+			fmt.Fprintf(w, err.Error())
+		}
+		templateErr := t.ExecuteTemplate(w, "index.html", nil)
+
+		if templateErr != nil {
+			fmt.Fprintf(w, templateErr.Error())
+			fmt.Fprintf(w, t.DefinedTemplates())
+		}
+	} else {
+		w.WriteHeader(http.StatusNotFound)
+		fmt.Fprintf(w, "<h1>We could not find the page you "+
+			"were looking for :(</h1>"+
+			"<p>Please email us if you keep being sent to an "+
+			"invalid page.</p>")
 	}
 
-	templateErr := t.ExecuteTemplate(response, "index.html", nil)
-
-	if templateErr != nil {
-		fmt.Fprintf(response, templateErr.Error())
-		fmt.Fprintf(response, t.DefinedTemplates())
-	}
 }
 
 func main() {
