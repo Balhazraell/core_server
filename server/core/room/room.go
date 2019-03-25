@@ -6,7 +6,6 @@ import (
 
 var Room RoomStruct
 
-// Chunc описывает струтуру участка игрового пространства.
 type Chunc struct {
 	ID          int      `json:"id"`
 	State       int      `json:"state"`
@@ -23,7 +22,6 @@ type RoomStruct struct {
 
 	// Каналы
 	shutdownLoop chan bool
-	updateMap    chan bool
 }
 
 // StartNewRoom - метод запуска новой комнаты.
