@@ -1,6 +1,8 @@
 package room
 
 import (
+	"fmt"
+
 	"../../logger"
 )
 
@@ -22,12 +24,14 @@ type RoomStruct struct {
 
 	// Каналы
 	shutdownLoop chan bool
+	updateMap    chan bool
 }
 
 // StartNewRoom - метод запуска новой комнаты.
 // На вход подается id комнаты котурую надо создать.
 func StartNewRoom(id int) {
 	Room := RoomStruct{
+		ID:           id,
 		Map:          make(map[int]*Chunc),
 		shutdownLoop: make(chan bool),
 		updateMap:    make(chan bool),
@@ -35,6 +39,7 @@ func StartNewRoom(id int) {
 
 	createMap()
 
+	StartRabbitMQ(fmt.Sprintf("room_%v", id))
 	go Room.loop()
 }
 

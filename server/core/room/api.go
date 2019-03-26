@@ -6,6 +6,11 @@ import (
 	"../../logger"
 )
 
+type CallbackMessageStruct struct {
+	Status  bool   `json:"Status"`
+	Message string `json:"Message"`
+}
+
 //--------------------- core struct --------------------//
 type UpdateMapStruct struct {
 	Map        []byte `json:"Map"`

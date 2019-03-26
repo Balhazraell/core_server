@@ -60,7 +60,7 @@ func updateClientsMap(clientsIDs []int) {
 		return
 	}
 
-	newMessage := Message{
+	newMessage := MessageRMQ{
 		HandlerName: "UpdateClientsMap",
 		Data:        string(data),
 	}
@@ -72,9 +72,36 @@ func updateClientsMap(clientsIDs []int) {
 func clientConnect(clientID int) {
 	logger.InfoPrintf("К комнате %v подключился новый клиент с id=%v.", Room.ID, clientID)
 
-	Room.clients = append(Room.clients, clientID)
+	var elementIndex = findElementInArray(Room.clients, clientID)
+	var callbackMessage CallbackMessageStruct
 
-	updateClientsMap([]int{clientID})
+	if elementIndex == -1 {
+		Room.clients = append(Room.clients, clientID)
+		callbackMessage = CallbackMessageStruct{
+			Status:  true,
+			Message: "",
+		}
+
+		updateClientsMap([]int{clientID})
+	} else {
+		callbackMessage = CallbackMessageStruct{
+			Status:  false,
+			Message: "Пользователь с таким id уже есть!",
+		}
+	}
+
+	message, err := json.Marshal(callbackMessage)
+	if err != nil {
+		logger.WarningPrintf("При по попытке сформировать json для callback произошла ошибка: %v", err)
+		return
+	}
+
+	messageRMQ := MessageRMQ{
+		HandlerName: "ClientConnectCallback",
+		Data:        string(message),
+	}
+
+	PublishMessage(messageRMQ)
 }
 
 func clientDisconnect(clientID int) {
@@ -114,7 +141,7 @@ func SetChunckState(clientID int, chunkID int) {
 			return
 		}
 
-		newMessage := Message{
+		newMessage := MessageRMQ{
 			HandlerName: "SendErrorMessage",
 			Data:        string(data),
 		}

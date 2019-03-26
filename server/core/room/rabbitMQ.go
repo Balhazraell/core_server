@@ -10,8 +10,8 @@ import (
 
 var channel amqp.Channel
 
-// Message - Формат сообщений для обмена по RabbitMQ
-type Message struct {
+// MessageRMQ - Формат сообщений для обмена по RabbitMQ
+type MessageRMQ struct {
 	HandlerName string `json:"handler_name"`
 	Data        string `json:"data"`
 }
@@ -97,7 +97,7 @@ func StartRabbitMQ(name string) {
 	// Мониторим очередь на наличие сообщений.
 	go func() {
 		for d := range msgs {
-			var msg Message
+			var msg MessageRMQ
 			err := json.Unmarshal(d.Body, &msg)
 
 			if err == io.EOF {
@@ -121,7 +121,7 @@ func StartRabbitMQ(name string) {
 }
 
 // PublishMessage - Отправка сообщений в очередь
-func PublishMessage(message Message) {
+func PublishMessage(message MessageRMQ) {
 	jsonMessag, err := json.Marshal(message)
 	checkError(err, "Failed marshal message")
 

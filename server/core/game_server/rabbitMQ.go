@@ -11,7 +11,7 @@ import (
 var channel amqp.Channel
 
 // Message - Формат сообщений для обмена по RabbitMQ
-type Message struct {
+type MessageRMQ struct {
 	HandlerName string `json:"handler_name"`
 	Data        string `json:"data"`
 }
@@ -33,7 +33,7 @@ func StartRabbitMQ(name string) {
 	// Устанавливаем соединение с брокером.
 	channel, err := conn.Channel()
 	checkError(err, "Failed to open a channel")
-	defer ch.Close()
+	defer channel.Close()
 
 	// Точка доступа должна быть создана, до того как создана очередь.
 	// так как слать сообщения в несучествующую точку доступа запрещено!
@@ -101,7 +101,7 @@ func StartRabbitMQ(name string) {
 	// Запускаем горутину которая будет "слушать" очередь.
 	go func() {
 		for d := range msgs {
-			var msg coreMessage
+			var msg MessageRMQ
 			err := json.Unmarshal(d.Body, &msg)
 
 			if err == io.EOF {
@@ -120,7 +120,7 @@ func StartRabbitMQ(name string) {
 }
 
 // PublishMessage - Отправка сообщений в очередь
-func PublishMessage(roomName string, message Message) {
+func PublishMessage(roomName string, message MessageRMQ) {
 	jsonMessag, err := json.Marshal(message)
 	checkError(err, "Failed marshal message")
 
