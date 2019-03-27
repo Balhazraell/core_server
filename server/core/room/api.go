@@ -7,8 +7,9 @@ import (
 )
 
 type CallbackMessageStruct struct {
-	Status  bool   `json:"Status"`
-	Message string `json:"Message"`
+	ServiceID int    `json:"ServiceID"`
+	Status    bool   `json:"Status"`
+	Message   string `json:"Message"`
 }
 
 //--------------------- core struct --------------------//
@@ -30,12 +31,12 @@ type SetChunckStateStruct struct {
 
 // APIMetods - Перечень доступных API методов.
 var APIMetods = map[string]func(string){
-	"ClientConnect":    APIClientConnect,
-	"ClientDisconnect": APIClientDisconnect,
-	"SetChunckState":   APISetChunckState,
+	"ClientConnect":    apiClientConnect,
+	"ClientDisconnect": apiClientDisconnect,
+	"SetChunckState":   apiSetChunckState,
 }
 
-func APIClientConnect(data string) {
+func apiClientConnect(data string) {
 	var clientID int
 	err := json.Unmarshal([]byte(data), &clientID)
 
@@ -46,7 +47,7 @@ func APIClientConnect(data string) {
 	clientConnect(clientID)
 }
 
-func APIClientDisconnect(data string) {
+func apiClientDisconnect(data string) {
 	var clientID int
 	err := json.Unmarshal([]byte(data), &clientID)
 
@@ -57,7 +58,7 @@ func APIClientDisconnect(data string) {
 	clientDisconnect(clientID)
 }
 
-func APISetChunckState(data string) {
+func apiSetChunckState(data string) {
 	var setChunckStateStruct SetChunckStateStruct
 
 	err := json.Unmarshal([]byte(data), &setChunckStateStruct)

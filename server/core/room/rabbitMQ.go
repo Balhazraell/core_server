@@ -120,6 +120,22 @@ func StartRabbitMQ(name string) {
 	}()
 }
 
+// CreateMessage - Запаковывает структуру для отправки.
+func CreateMessage(data interface{}, methodName string) {
+	message, err := json.Marshal(data)
+	if err != nil {
+		logger.WarningPrintf("Ошибка при запаковке данных для отправки %v: %v", methodName, err)
+		return
+	}
+
+	messageRMQ := MessageRMQ{
+		HandlerName: methodName,
+		Data:        string(message),
+	}
+
+	PublishMessage(messageRMQ)
+}
+
 // PublishMessage - Отправка сообщений в очередь
 func PublishMessage(message MessageRMQ) {
 	jsonMessag, err := json.Marshal(message)

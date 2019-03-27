@@ -6,17 +6,18 @@ import (
 	"../../logger"
 )
 
-var Room RoomStruct
+// Room - основная структура данных этого пакета.
+var Room room
 
-type Chunc struct {
+type chunc struct {
 	ID          int      `json:"id"`
 	State       int      `json:"state"`
 	Сoordinates [][2]int `json:"coordinates"`
 }
 
-type RoomStruct struct {
+type room struct {
 	ID      int
-	Map     map[int]*Chunc
+	Map     map[int]*chunc
 	clients []int
 
 	// Переменные логики.
@@ -30,9 +31,9 @@ type RoomStruct struct {
 // StartNewRoom - метод запуска новой комнаты.
 // На вход подается id комнаты котурую надо создать.
 func StartNewRoom(id int) {
-	Room := RoomStruct{
+	Room := room{
 		ID:           id,
-		Map:          make(map[int]*Chunc),
+		Map:          make(map[int]*chunc),
 		shutdownLoop: make(chan bool),
 		updateMap:    make(chan bool),
 	}
@@ -44,29 +45,29 @@ func StartNewRoom(id int) {
 }
 
 // Stop - Останавлием работу комнаты
-func (room *RoomStruct) Stop() {
+func (r *room) Stop() {
 	// ...какая-нибудь логика завершения работы.
-	room.shutdownLoop <- true
+	r.shutdownLoop <- true
 }
 
-func (room *RoomStruct) loop() {
+func (r *room) loop() {
 	defer func() {
-		logger.InfoPrintf("Комната с id=%v закончила работу.", room.ID)
+		logger.InfoPrintf("Комната с id=%v закончила работу.", r.ID)
 	}()
 
-	logger.InfoPrintf("Комната с id=%v начала работу.", room.ID)
+	logger.InfoPrintf("Комната с id=%v начала работу.", r.ID)
 
 	for {
 		// Обновление логики происходит тут.
 
 		select {
-		case <-room.shutdownLoop:
+		case <-r.shutdownLoop:
 			return
 
 		// Даже не знаю на сколько целесообразно делать это в отдельном потоке.
 		// Мсль была в том, что update карт должен произоти не моментально после изменений
 		// но хз на сколько это грамотоное решение.
-		case <-room.updateMap:
+		case <-r.updateMap:
 			updateClientsMap(Room.clients)
 		}
 	}

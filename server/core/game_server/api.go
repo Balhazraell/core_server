@@ -6,69 +6,96 @@ import (
 	"../../logger"
 )
 
-// Перечень доступных API методов.
+// APIMetods - Перечень доступных API методов.
 var APIMetods = map[string]func(string){
-	"RoomConnect":              APIRoomConnect,
-	"UpdateClientsMap":         APIUpdateClientsMap,
-	"SendErrorMessage":         APISendErrorMessage,
-	"ClientConnectCallback":    APIClientConnectCallback,
-	"ClientDisconnectCallback": APIClientDisconnectCallback,
+	"RoomConnect":              apiRoomConnect,
+	"UpdateClientsMap":         apiUpdateClientsMap,
+	"SendErrorMessage":         apiSendErrorMessage,
+	"ClientConnectCallback":    apiClientConnectCallback,
+	"ClientDisconnectCallback": apiClientDisconnectCallback,
 }
 
-type UpdateMapStruct struct {
+//------------------ Income struct ---------------------------//
+type updateMapStruct struct {
 	Map        []byte `json:"Map"`
 	ClientsIDs []int  `json:"ClientsIDs"`
 }
 
-type SendErrorMessageStruct struct {
+type sendErrorMessageStruct struct {
 	ClientID     int    `json:"ClientID"`
 	ErrorMessage string `json:"ErrorMessage"`
 }
 
-type CallbackMessageStruct struct {
-	Status  bool   `json:"Status"`
-	Message string `json:"Message"`
+type clientConnectCallbackStruct struct {
+	ClientID int    `json:"ClientID"`
+	Status   bool   `json:"Status"`
+	Message  string `json:"Message"`
+}
+
+type clientDisconnectCallbackStruct struct {
+	ClientID int    `json:"ClientID"`
+	Status   bool   `json:"Status"`
+	Message  string `json:"Message"`
+}
+
+//--------------------- Outgoing struct -------------------------//
+type setChunckStateStruct struct {
+	ClientID int `json:"ClientID"`
+	ChunkID  int `json:"ChunkID"`
 }
 
 //--------------------- Обработка API -----------------------//
-func APIRoomConnect(data string) {
-	// TODO: должно передоваться имя и ID комнаты... (Надо подумать над этим...)
+func apiRoomConnect(data string) {
 	var ID int
 	err := json.Unmarshal([]byte(data), &ID)
 
 	if err != nil {
 		logger.ErrorPrintf("Failed unmarshal room connect message: %s", err)
 	}
-	// TODO не понятно на сколько хорошая практика.
+
 	newRoomConnect(ID)
 }
 
-func APIUpdateClientsMap(data string) {
-	var updateMapStruct UpdateMapStruct
-	err := json.Unmarshal([]byte(data), &updateMapStruct)
+func apiUpdateClientsMap(data string) {
+	var object updateMapStruct
+	err := json.Unmarshal([]byte(data), &object)
 
 	if err != nil {
 		logger.ErrorPrintf("Ошибка при распаковке данных для обновления карты: %s", err)
 	}
-	// TODO не понятно на сколько хорошая практика.
-	updateClientsMap(updateMapStruct.Map, updateMapStruct.ClientsIDs)
+
+	updateClientsMap(object.Map, object.ClientsIDs)
 }
 
-func APISendErrorMessage(data string) {
-	var sendErrorMessageStruct SendErrorMessageStruct
-	err := json.Unmarshal([]byte(data), &sendErrorMessageStruct)
+func apiSendErrorMessage(data string) {
+	var object sendErrorMessageStruct
+	err := json.Unmarshal([]byte(data), &object)
 
 	if err != nil {
 		logger.ErrorPrintf("Ошибка при распаковке данных отправки сообщения об ошибке: %s", err)
 	}
-	// TODO не понятно на сколько хорошая практика.
-	sendErrorMessage(sendErrorMessageStruct.ClientID, sendErrorMessageStruct.ErrorMessage)
+
+	sendErrorMessage(object.ClientID, object.ErrorMessage)
 }
 
-func APIClientConnectCallback(data string) {
+func apiClientConnectCallback(data string) {
+	var object clientConnectCallbackStruct
+	err := json.Unmarshal([]byte(data), &object)
 
+	if err != nil {
+		logger.ErrorPrintf("Ошибка при распаковке данных callback при подключении клиента: %s", err)
+	}
+
+	clientConnectCallback(object.ClientID, object.Status, object.Message)
 }
 
-func APIClientDisconnectCallback(data string) {
+func apiClientDisconnectCallback(data string) {
+	var object clientDisconnectCallbackStruct
+	err := json.Unmarshal([]byte(data), &object)
 
+	if err != nil {
+		logger.ErrorPrintf("Ошибка при распаковке данных callback при подключении клиента: %s", err)
+	}
+
+	clientDisconectCallback(object.ClientID, object.Status, object.Message)
 }

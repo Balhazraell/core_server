@@ -47,13 +47,14 @@ type UpdateClientsMapStruct struct {
 	ClientsIDs []int
 }
 
+type RoomData struct {
+	ID   int
+	Name string
+}
+
 type NewClientIsConnectedStruct struct {
 	ClientID     int
-	ClientMap    []byte
-	RoomsCatalog struct {
-		ID   int
-		Name string
-	}
+	RoomsCatalog []RoomData
 }
 
 type SendErrorToСlientStruct struct {

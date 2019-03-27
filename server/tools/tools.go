@@ -1,17 +1,20 @@
 package tools
 
-import (
-	"../logger"
-)
-
-func FailOnWarning(err error, msg string) {
-	if err != nil {
-		logger.WarningPrintf("%s: %s", msg, err)
-	}
+//DeleElementFromArraByIndex - Метод удаляет элемент массива по индексу.
+func DeleElementFromArraByIndex(array []int, index int) []int {
+	array[index] = array[len(array)-1]
+	return array[:len(array)-1]
 }
 
-func FailOnError(err error, msg string) {
-	if err != nil {
-		logger.ErrorPrintf("%s: %s", msg, err)
+//FindElementInArray - Метод находит первое вхождение заданного элемента в массиве.
+func FindElementInArray(array []int, val int) int {
+	var result = -1
+
+	for i, v := range array {
+		if val == v {
+			return i
+		}
 	}
+
+	return result
 }

@@ -119,15 +119,31 @@ func StartRabbitMQ(name string) {
 	}()
 }
 
+// CreateMessage - Запаковывает структуру для отправки.
+func CreateMessage(consumerName string, data interface{}, methodName string) {
+	message, err := json.Marshal(data)
+	if err != nil {
+		logger.WarningPrintf("Ошибка при запаковке данных для отправки %v: %v", methodName, err)
+		return
+	}
+
+	messageRMQ := MessageRMQ{
+		HandlerName: methodName,
+		Data:        string(message),
+	}
+
+	PublishMessage(consumerName, messageRMQ)
+}
+
 // PublishMessage - Отправка сообщений в очередь
-func PublishMessage(roomName string, message MessageRMQ) {
+func PublishMessage(consumerName string, message MessageRMQ) {
 	jsonMessag, err := json.Marshal(message)
 	checkError(err, "Failed marshal message")
 
 	err = channel.Publish(
-		roomName, // exchange
-		roomName, // routing key
-		false,    // mandatory
+		consumerName, // exchange
+		consumerName, // routing key
+		false,        // mandatory
 		false,
 		amqp.Publishing{
 			DeliveryMode: amqp.Persistent,

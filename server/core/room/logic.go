@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 
 	"../../logger"
+	"../../tools"
 )
 
 // Функция создания карты для комнаты.
@@ -15,7 +16,7 @@ func createMap() {
 	for i := 0; i < 3; i++ {
 		var x = 0
 		for j := 0; j < 3; j++ {
-			chunc := Chunc{
+			chunc := chunc{
 				ID:    chunckIDCounter,
 				State: ChuncStateEmpty,
 			}
@@ -72,44 +73,36 @@ func updateClientsMap(clientsIDs []int) {
 func clientConnect(clientID int) {
 	logger.InfoPrintf("К комнате %v подключился новый клиент с id=%v.", Room.ID, clientID)
 
-	var elementIndex = findElementInArray(Room.clients, clientID)
+	var elementIndex = tools.FindElementInArray(Room.clients, clientID)
+
 	var callbackMessage CallbackMessageStruct
 
 	if elementIndex == -1 {
 		Room.clients = append(Room.clients, clientID)
 		callbackMessage = CallbackMessageStruct{
-			Status:  true,
-			Message: "",
+			ServiceID: Room.ID,
+			Status:    true,
+			Message:   "",
 		}
 
 		updateClientsMap([]int{clientID})
 	} else {
 		callbackMessage = CallbackMessageStruct{
-			Status:  false,
-			Message: "Пользователь с таким id уже есть!",
+			ServiceID: Room.ID,
+			Status:    false,
+			Message:   "Пользователь с таким id уже есть!",
 		}
 	}
 
-	message, err := json.Marshal(callbackMessage)
-	if err != nil {
-		logger.WarningPrintf("При по попытке сформировать json для callback произошла ошибка: %v", err)
-		return
-	}
-
-	messageRMQ := MessageRMQ{
-		HandlerName: "ClientConnectCallback",
-		Data:        string(message),
-	}
-
-	PublishMessage(messageRMQ)
+	CreateMessage(callbackMessage, "ClientConnectCallback")
 }
 
 func clientDisconnect(clientID int) {
-	var clientIndex = findElementInArray(Room.clients, clientID)
+	var clientIndex = tools.FindElementInArray(Room.clients, clientID)
 
 	if clientIndex != -1 {
 		logger.InfoPrintf("Удаляем клиента id=%v из комнаты id=%v.", clientID, Room.ID)
-		Room.clients = deleElementFromArraByIndex(Room.clients, clientIndex)
+		Room.clients = tools.DeleElementFromArraByIndex(Room.clients, clientIndex)
 	} else {
 		logger.WarningPrintf("Попытка удалить клиента из комнаты, корого нет: id=%v.", clientID)
 	}
@@ -135,37 +128,6 @@ func SetChunckState(clientID int, chunkID int) {
 			ErrorMessage: "Нельзя изменить значение!",
 		}
 
-		data, err := json.Marshal(sendErrorMessageStruct)
-		if err != nil {
-			logger.WarningPrintf("При формировнии json при формировании сообщения с ошибкой произошла ошибка %v.", err)
-			return
-		}
-
-		newMessage := MessageRMQ{
-			HandlerName: "SendErrorMessage",
-			Data:        string(data),
-		}
-
-		PublishMessage(newMessage)
-		//TODO: необходимо отослать сообщение об ошибке поведения пользователя.
-		// GameServer.SendErrorToСlient(clientID, "Нельзя изменить значение!")
+		CreateMessage(sendErrorMessageStruct, "SendErrorMessage")
 	}
-}
-
-//------------------------------- tools -------------------------//
-func deleElementFromArraByIndex(array []int, index int) []int {
-	array[index] = array[len(array)-1]
-	return array[:len(array)-1]
-}
-
-func findElementInArray(array []int, val int) int {
-	var result = -1
-
-	for i, v := range array {
-		if val == v {
-			return i
-		}
-	}
-
-	return result
 }
