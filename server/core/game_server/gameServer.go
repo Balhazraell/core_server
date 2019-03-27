@@ -3,6 +3,7 @@ package game_server
 import (
 	"../../api"
 	"../../logger"
+	"github.com/streadway/amqp"
 
 	// TODO: временное решение для проерки работы комнат.
 	"../room"
@@ -19,6 +20,10 @@ type server struct {
 	Rooms          map[int]string
 
 	shutdownLoop chan bool
+
+	//--- RabbitMQ
+	connectRMQ *amqp.Connection
+	channelRMQ *amqp.Channel
 }
 
 // GServerStart - метод запуска игрового сервера.
@@ -31,10 +36,12 @@ func ServerStart() {
 
 	go Server.loop()
 
+	StartRabbitMQ()
+
 	// TODO: Сейчас создаем несколько комнат.
 	// В сервисной архитектуре, это будем делать не мы.
 	room.StartNewRoom(1)
-	room.StartNewRoom(2)
+	// room.StartNewRoom(2)
 }
 
 // Stop - метод завершения работы игрового сервера.
@@ -44,6 +51,8 @@ func (serv *server) Stop() {
 
 func (serv *server) loop() {
 	defer func() {
+		serv.connectRMQ.Close()
+		serv.channelRMQ.Close()
 		logger.InfoPrint("Игровой сервер закончил свою работу.")
 	}()
 

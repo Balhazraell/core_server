@@ -28,7 +28,9 @@ func clientConnect(clietnID int) {
 	*/
 	_, ok := Server.RoomIDByClient[clietnID]
 	if !ok {
+		// TODO: Комнаты может ещё/уже не быть!
 		Server.RoomIDByClient[clietnID] = 1
+		logger.InfoPrint(Server.Rooms)
 		CreateMessage(Server.Rooms[1], clietnID, "ClientConnect")
 	} else {
 		logger.WarningPrintf("Пользователь с id:%v уже существует.", clietnID)

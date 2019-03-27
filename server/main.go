@@ -5,13 +5,13 @@ import (
 	"html/template"
 	"net/http"
 
-	"./core"
+	"./core/game_server"
 	"./logger"
 	"./websockets"
 )
 
 func init() {
-	fsJS := http.FileServer(http.Dir("../static/js/dist/"))
+	fsJS := http.FileServer(http.Dir("../static/js/src/dist/"))
 	fsCSS := http.FileServer(http.Dir("../static/css/"))
 
 	http.Handle("/js/", http.StripPrefix("/js", fsJS))
@@ -56,7 +56,7 @@ func main() {
 	}
 
 	// Запускаем игровой сервер.
-	core.GameServerStart()
+	game_server.ServerStart()
 
 	// Стартуем сервер websocket.
 	websockets.Start()

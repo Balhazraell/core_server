@@ -83,10 +83,6 @@ func (server *Server) listen() {
 				updateClientsMapStruct.ClientsIDs,
 			)
 		case connectedClientData := <-api.API.NewClientIsConnectedChl:
-			server.setClietMap(
-				connectedClientData.ClientID,
-				connectedClientData.ClientMap,
-			)
 			server.setRoomsCatalog(
 				connectedClientData.ClientID,
 				connectedClientData.RoomsCatalog,
@@ -175,7 +171,7 @@ func (server *Server) setClietMap(clietID int, clientMap []byte) {
 	}
 }
 
-func (server *Server) setRoomsCatalog(clietID int, roomsIDs []int) {
+func (server *Server) setRoomsCatalog(clietID int, roomsIDs []api.RoomData) {
 	client, ok := server.clients[clietID]
 	if ok {
 		client.SetRoomsCatalog(roomsIDs)

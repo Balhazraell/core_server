@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"../../logger"
+	"github.com/streadway/amqp"
 )
 
 // Room - основная структура данных этого пакета.
@@ -19,6 +20,7 @@ type room struct {
 	ID      int
 	Map     map[int]*chunc
 	clients []int
+	channel *amqp.Channel
 
 	// Переменные логики.
 	GameState int // Делаем крестики нолики, по этому 2 состояния - ходит один потом другой.
@@ -26,12 +28,16 @@ type room struct {
 	// Каналы
 	shutdownLoop chan bool
 	updateMap    chan bool
+
+	//--- RabbitMQ
+	connectRMQ *amqp.Connection
+	channelRMQ *amqp.Channel
 }
 
 // StartNewRoom - метод запуска новой комнаты.
 // На вход подается id комнаты котурую надо создать.
 func StartNewRoom(id int) {
-	Room := room{
+	Room = room{
 		ID:           id,
 		Map:          make(map[int]*chunc),
 		shutdownLoop: make(chan bool),
@@ -40,8 +46,13 @@ func StartNewRoom(id int) {
 
 	createMap()
 
+	logger.InfoPrintf("Комната с именем %v начала свою работу", fmt.Sprintf("room_%v", id))
+
 	StartRabbitMQ(fmt.Sprintf("room_%v", id))
+
 	go Room.loop()
+
+	CreateMessage(id, "RoomConnect")
 }
 
 // Stop - Останавлием работу комнаты
@@ -52,6 +63,8 @@ func (r *room) Stop() {
 
 func (r *room) loop() {
 	defer func() {
+		r.connectRMQ.Close()
+		r.channelRMQ.Close()
 		logger.InfoPrintf("Комната с id=%v закончила работу.", r.ID)
 	}()
 

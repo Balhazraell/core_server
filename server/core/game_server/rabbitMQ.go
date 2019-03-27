@@ -8,7 +8,7 @@ import (
 	"github.com/streadway/amqp"
 )
 
-var channel amqp.Channel
+// var channel amqp.Channel
 
 // Message - Формат сообщений для обмена по RabbitMQ
 type MessageRMQ struct {
@@ -23,17 +23,17 @@ func checkError(err error, message string) {
 }
 
 // StartRabbitMQ - Запускает создание очередей в RabbitMQ
-func StartRabbitMQ(name string) {
+func StartRabbitMQ() {
 	//--------------------------------- Owerall ----------------------------
 	// Создадим связь с брокером.
 	conn, err := amqp.Dial("amqp://macroserv:12345@localhost:5672/macroserv")
 	checkError(err, "Failed to connect to RabbitMQ")
-	defer conn.Close()
+	Server.connectRMQ = conn
 
 	// Устанавливаем соединение с брокером.
 	channel, err := conn.Channel()
 	checkError(err, "Failed to open a channel")
-	defer channel.Close()
+	Server.channelRMQ = channel
 
 	// Точка доступа должна быть создана, до того как создана очередь.
 	// так как слать сообщения в несучествующую точку доступа запрещено!
@@ -137,11 +137,12 @@ func CreateMessage(consumerName string, data interface{}, methodName string) {
 
 // PublishMessage - Отправка сообщений в очередь
 func PublishMessage(consumerName string, message MessageRMQ) {
+	// TODO: Канала может не быть!
 	jsonMessag, err := json.Marshal(message)
 	checkError(err, "Failed marshal message")
 
-	err = channel.Publish(
-		consumerName, // exchange
+	err = Server.channelRMQ.Publish(
+		"rooms",      // exchange
 		consumerName, // routing key
 		false,        // mandatory
 		false,

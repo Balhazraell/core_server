@@ -335,8 +335,8 @@ function setRoomCatalog(roomsList){
     // А теперь заполняем.
     for ( let i = 0; i < roomsList.length; i++) {
         let option = document.createElement("option");
-        option.value = roomsList[i];
-        option.text = roomsList[i];
+        option.value = roomsList[i].ID;
+        option.text = roomsList[i].Name;
         roomCatalog.add(option);
     }
 }

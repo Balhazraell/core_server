@@ -7,6 +7,7 @@ import (
 
 	"golang.org/x/net/websocket"
 
+	"../api"
 	"../logger"
 )
 
@@ -117,7 +118,7 @@ func (client *Client) SendError(message string) {
 }
 
 // SetRoomsCatalog - метод отдающий пользователю текущий каталок с комнатами.
-func (client *Client) SetRoomsCatalog(roomsIDs []int) {
+func (client *Client) SetRoomsCatalog(roomsIDs []api.RoomData) {
 	jsonRoomsIDs, err := json.Marshal(roomsIDs)
 
 	if err != nil {
