@@ -3,7 +3,7 @@ package game_server
 import (
 	"encoding/json"
 
-	"../../logger"
+	"../logger"
 )
 
 // APIMetods - Перечень доступных API методов.

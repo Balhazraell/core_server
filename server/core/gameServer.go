@@ -1,12 +1,9 @@
 package game_server
 
 import (
-	"../../api"
-	"../../logger"
+	"../api"
+	"../logger"
 	"github.com/streadway/amqp"
-
-	// TODO: временное решение для проерки работы комнат.
-	"../room"
 )
 
 // В первой итерации вебсокеты будут передавать сообщения на прямую в gameServer.
@@ -37,11 +34,6 @@ func ServerStart() {
 	go Server.loop()
 
 	StartRabbitMQ()
-
-	// TODO: Сейчас создаем несколько комнат.
-	// В сервисной архитектуре, это будем делать не мы.
-	room.StartNewRoom(1)
-	// room.StartNewRoom(2)
 }
 
 // Stop - метод завершения работы игрового сервера.

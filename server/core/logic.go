@@ -3,8 +3,8 @@ package game_server
 import (
 	"fmt"
 
-	"../../api"
-	"../../logger"
+	"../api"
+	"../logger"
 )
 
 func newRoomConnect(id int) {
