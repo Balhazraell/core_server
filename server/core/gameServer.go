@@ -1,4 +1,4 @@
-package game_server
+package core
 
 import (
 	"../api"
@@ -45,10 +45,10 @@ func (serv *server) loop() {
 	defer func() {
 		serv.connectRMQ.Close()
 		serv.channelRMQ.Close()
-		logger.InfoPrint("Игровой сервер закончил свою работу.")
+		logger.InfoPrint("Cервер закончил свою работу.")
 	}()
 
-	logger.InfoPrint("Игровой сервер запущен.")
+	logger.InfoPrint("Cервер запущен.")
 
 	for {
 		select {

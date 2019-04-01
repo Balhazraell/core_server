@@ -1,4 +1,4 @@
-package game_server
+package core
 
 import (
 	"encoding/json"

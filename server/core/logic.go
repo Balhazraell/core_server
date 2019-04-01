@@ -1,4 +1,4 @@
-package game_server
+package core
 
 import (
 	"fmt"
@@ -25,13 +25,20 @@ func clientConnect(clietnID int) {
 	/*
 		Должен братся набор существующих комнат и смотреть в какую мы можем поместить пользователя...
 		Если такой комнаты нет, то нужно создать новую.
+		!!! Нет обработки отключения комнаты.
 	*/
 	_, ok := Server.RoomIDByClient[clietnID]
 	if !ok {
 		// TODO: Комнаты может ещё/уже не быть!
-		Server.RoomIDByClient[clietnID] = 1
-		logger.InfoPrint(Server.Rooms)
-		CreateMessage(Server.Rooms[1], clietnID, "ClientConnect")
+
+		keys := make([]int, 0)
+
+		for key := range Server.Rooms {
+			keys = append(keys, key)
+		}
+
+		Server.RoomIDByClient[clietnID] = keys[0]
+		CreateMessage(Server.Rooms[keys[0]], clietnID, "ClientConnect")
 	} else {
 		logger.WarningPrintf("Пользователь с id:%v уже существует.", clietnID)
 	}
@@ -46,7 +53,7 @@ func setChunckState(clientID int, chuncID int) {
 	}
 
 	roomID := Server.RoomIDByClient[clientID]
-
+	logger.InfoPrint(Server.Rooms[roomID])
 	CreateMessage(Server.Rooms[roomID], message, "SetChunckState")
 }
 

@@ -5,7 +5,7 @@ import (
 	"html/template"
 	"net/http"
 
-	"./core/game_server"
+	"./core"
 	"./logger"
 	"./websockets"
 )
@@ -56,7 +56,7 @@ func main() {
 	}
 
 	// Запускаем игровой сервер.
-	game_server.ServerStart()
+	core.ServerStart()
 
 	// Стартуем сервер websocket.
 	websockets.Start()
