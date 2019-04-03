@@ -5,15 +5,16 @@ var API websocketsCoreAPI
 func init() {
 	API = websocketsCoreAPI{
 		// core
-		make(chan int),
-		make(chan int),
-		make(chan SetChunckStateStruct),
-		make(chan ChangeRoomStructure),
+		ClientConnectionChl: make(chan int),
+		ClientDisconnectChl: make(chan int),
+		SetChunckStateChl:   make(chan SetChunckStateStruct),
+		ChangeRoomChl:       make(chan ChangeRoomStructure),
 
 		// websockets
-		make(chan UpdateClientsMapStruct),
-		make(chan NewClientIsConnectedStruct),
-		make(chan SendErrorToСlientStruct),
+		UpdateClientsMapChl:     make(chan UpdateClientsMapStruct),
+		NewClientIsConnectedChl: make(chan NewClientIsConnectedStruct),
+		SendErrorToСlientChl:    make(chan SendErrorToСlientStruct),
+		UpdateRoomsCatalog:      make(chan RoomsCatalogStruct),
 	}
 }
 
@@ -28,6 +29,7 @@ type websocketsCoreAPI struct {
 	UpdateClientsMapChl     chan UpdateClientsMapStruct
 	NewClientIsConnectedChl chan NewClientIsConnectedStruct
 	SendErrorToСlientChl    chan SendErrorToСlientStruct
+	UpdateRoomsCatalog      chan RoomsCatalogStruct
 }
 
 // core
@@ -60,4 +62,9 @@ type NewClientIsConnectedStruct struct {
 type SendErrorToСlientStruct struct {
 	ClientID int
 	Message  string
+}
+
+type RoomsCatalogStruct struct {
+	ClientIDs    []int
+	RoomsCatalog []RoomData
 }

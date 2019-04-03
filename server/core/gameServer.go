@@ -16,6 +16,10 @@ type server struct {
 	RoomIDByClient map[int]int
 	Rooms          map[int]string
 
+	//! Это список пользователей в очереди на подключение.
+	// мы должны переодически проверять его на наличие там пользователей на подключение!
+	PendingUsers []int
+
 	shutdownLoop chan bool
 
 	//--- RabbitMQ
@@ -23,7 +27,7 @@ type server struct {
 	channelRMQ *amqp.Channel
 }
 
-// GServerStart - метод запуска игрового сервера.
+// ServerStart - метод запуска игрового сервера.
 func ServerStart() {
 	Server = server{
 		RoomIDByClient: make(map[int]int),

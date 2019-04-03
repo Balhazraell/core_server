@@ -92,6 +92,11 @@ func (server *Server) listen() {
 				sendErrorToСlientStruct.ClientID,
 				sendErrorToСlientStruct.Message,
 			)
+		case updateRoomsCatalogStruct := <-api.API.UpdateRoomsCatalog:
+			server.updateRoomsCatalog(
+				updateRoomsCatalogStruct.ClientIDs,
+				updateRoomsCatalogStruct.RoomsCatalog,
+			)
 		}
 	}
 }
@@ -183,6 +188,12 @@ func (server *Server) setRoomsCatalog(clietID int, roomsIDs []api.RoomData) {
 
 func (server *Server) sendErrorToСlient(clientID int, message string) {
 	server.clients[clientID].SendError(message)
+}
+
+func (server *Server) updateRoomsCatalog(clientIDs []int, roomsCatalog []api.RoomData) {
+	for i := 0; i < len(clientIDs); i++ {
+		server.setRoomsCatalog(clientIDs[i], roomsCatalog)
+	}
 }
 
 func chengeRoomID(clientID int, data string) {

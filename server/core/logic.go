@@ -5,6 +5,7 @@ import (
 
 	"../api"
 	"../logger"
+	"../tools"
 )
 
 func newRoomConnect(id int) {
@@ -12,13 +13,30 @@ func newRoomConnect(id int) {
 	_, ok := Server.Rooms[id]
 	if !ok {
 		Server.Rooms[id] = fmt.Sprintf("room_%v", id)
+
+		//!TODO сейчас всех кидаем в первую появившуюся комнату.
+		if len(Server.PendingUsers) != 0 {
+			for len(Server.PendingUsers) != 0 {
+				clientID := Server.PendingUsers[0]
+				Server.PendingUsers = tools.DeleElementFromArraByIndex(Server.PendingUsers, 0)
+
+				logger.InfoPrint(Server.PendingUsers)
+
+				logger.InfoPrintf("Пользователя с id:%v из очереди ожидания поместили в комнату id:%v", clientID, id)
+
+				Server.RoomIDByClient[clientID] = id
+				CreateMessage(Server.Rooms[id], clientID, "ClientConnect")
+			}
+		} else {
+			updateRoomsCatalog()
+		}
 	} else {
 		logger.ErrorPrintf("Комната с id=%v уже существует!", id)
 	}
 }
 
 //--------------------- Обработка сообщений от клиента -----------------------//
-func clientConnect(clietnID int) {
+func clientConnect(clientID int) {
 	logger.InfoPrint("На сервер пришел новый пользователь.")
 
 	// TODO:
@@ -27,7 +45,7 @@ func clientConnect(clietnID int) {
 		Если такой комнаты нет, то нужно создать новую.
 		!!! Нет обработки отключения комнаты.
 	*/
-	_, ok := Server.RoomIDByClient[clietnID]
+	_, ok := Server.RoomIDByClient[clientID]
 	if !ok {
 		// TODO: Комнаты может ещё/уже не быть!
 
@@ -37,10 +55,18 @@ func clientConnect(clietnID int) {
 			keys = append(keys, key)
 		}
 
-		Server.RoomIDByClient[clietnID] = keys[0]
-		CreateMessage(Server.Rooms[keys[0]], clietnID, "ClientConnect")
+		if len(keys) == 0 {
+			logger.InfoPrint("Еще не создано ни одной комнаты, пользователь находится в ожидании!")
+			//!TODO: Необходимо отправить пользователю окно ожидания.
+			Server.RoomIDByClient[clientID] = -1
+			Server.PendingUsers = append(Server.PendingUsers, clientID)
+			return
+		}
+
+		Server.RoomIDByClient[clientID] = keys[0]
+		CreateMessage(Server.Rooms[keys[0]], clientID, "ClientConnect")
 	} else {
-		logger.WarningPrintf("Пользователь с id:%v уже существует.", clietnID)
+		logger.WarningPrintf("Пользователь с id:%v уже существует.", clientID)
 	}
 }
 
@@ -109,6 +135,24 @@ func getRoomsData() []api.RoomData {
 	return roomsData
 }
 
+func getAllUsers() []int {
+	result := make([]int, 0)
+	for k := range Server.RoomIDByClient {
+		result = append(result, k)
+	}
+
+	return result
+}
+
+func updateRoomsCatalog() {
+	roomsCatalog := api.RoomsCatalogStruct{
+		ClientIDs:    getAllUsers(),
+		RoomsCatalog: getRoomsData(),
+	}
+
+	api.API.UpdateRoomsCatalog <- roomsCatalog
+}
+
 //--------------------- Обработка API -----------------------//
 func updateClientsMap(gameMap []byte, clientsIDs []int) {
 	updateClientsMapStruct := api.UpdateClientsMapStruct{
@@ -130,6 +174,7 @@ func sendErrorMessage(clientID int, message string) {
 
 func clientConnectCallback(clientID int, status bool, message string) {
 	if status {
+		//?TODO: отправка списка комнат идет отдельно, возможно этот вызо не нужен.
 		newClientIsConnectedStruct := api.NewClientIsConnectedStruct{
 			ClientID:     clientID,
 			RoomsCatalog: getRoomsData(),
@@ -139,6 +184,7 @@ func clientConnectCallback(clientID int, status bool, message string) {
 
 	} else {
 		delete(Server.RoomIDByClient, clientID)
+		Server.PendingUsers = append(Server.PendingUsers, clientID)
 	}
 }
 
