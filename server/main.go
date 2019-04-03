@@ -20,19 +20,33 @@ func init() {
 	http.HandleFunc("/", returnIndex)
 }
 
+type view struct {
+	temp *template.Template
+}
+
+func createView(paths ...string) *view {
+	//!TODO: Необходимо реорганизовать папки.
+	paths = append(paths,
+		"../static/views/layouts/head.gohtml",
+		"../static/views/layouts/main.gohtml",
+		"../static/views/layouts/footer.gohtml",
+	)
+
+	t, err := template.ParseFiles(paths...)
+	if err != nil {
+		logger.ErrorPrintf("Не смогли создать страницу %v", err)
+	}
+
+	return &view{temp: t}
+}
+
 func returnIndex(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html")
-
 	if r.URL.Path == "/" {
-		t, err := template.ParseFiles("../static/index.html")
+		gameWindow := createView("../static/views/game_window.gohtml")
+		err := gameWindow.temp.ExecuteTemplate(w, "main", nil)
 		if err != nil {
-			fmt.Fprintf(w, err.Error())
-		}
-		templateErr := t.ExecuteTemplate(w, "index.html", nil)
-
-		if templateErr != nil {
-			fmt.Fprintf(w, templateErr.Error())
-			fmt.Fprintf(w, t.DefinedTemplates())
+			logger.InfoPrintf("При склейке шаблонов произошла ошибка %v:", err)
 		}
 	} else {
 		w.WriteHeader(http.StatusNotFound)
@@ -41,7 +55,6 @@ func returnIndex(w http.ResponseWriter, r *http.Request) {
 			"<p>Please email us if you keep being sent to an "+
 			"invalid page.</p>")
 	}
-
 }
 
 func main() {
