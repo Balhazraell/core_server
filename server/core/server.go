@@ -6,9 +6,6 @@ import (
 	"github.com/streadway/amqp"
 )
 
-// В первой итерации вебсокеты будут передавать сообщения на прямую в gameServer.
-// но потом надо продумать другую связь, возможно через балансировщик.
-
 // Server - singletone для работы с care частью сервера.GameServer
 var Server server
 

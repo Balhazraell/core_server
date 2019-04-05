@@ -222,7 +222,12 @@ function changeRoom(event){
     websocket.sendChangeRoomID(event.target.value)
 }
 
+function setSelectRoom(roomID){
+    document.getElementById("roomCatalog").selectedIndex = selectRoomID;
+}
+
 exports.set_grid = set_grid;
 exports.set_chunck_state = set_chunck_state;
 exports.send_error = send_error;
 exports.setRoomCatalog = setRoomCatalog;
+exports.setSelectRoom = setSelectRoom;

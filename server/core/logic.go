@@ -35,6 +35,40 @@ func newRoomConnect(id int) {
 	}
 }
 
+// getRoomsIDAndName - Возвращает список имен комнат
+func getRoomsData() []api.RoomData {
+	var roomsData []api.RoomData
+
+	for k, v := range Server.Rooms {
+		newRoomData := api.RoomData{
+			ID:   k,
+			Name: v,
+		}
+
+		roomsData = append(roomsData, newRoomData)
+	}
+
+	return roomsData
+}
+
+func getAllUsers() []int {
+	result := make([]int, 0)
+	for k := range Server.RoomIDByClient {
+		result = append(result, k)
+	}
+
+	return result
+}
+
+func updateRoomsCatalog() {
+	roomsCatalog := api.RoomsCatalogStruct{
+		ClientIDs:    getAllUsers(),
+		RoomsCatalog: getRoomsData(),
+	}
+
+	api.API.UpdateRoomsCatalog <- roomsCatalog
+}
+
 //--------------------- Обработка сообщений от клиента -----------------------//
 func clientConnect(clientID int) {
 	logger.InfoPrint("На сервер пришел новый пользователь.")
@@ -47,8 +81,7 @@ func clientConnect(clientID int) {
 	*/
 	_, ok := Server.RoomIDByClient[clientID]
 	if !ok {
-		// TODO: Комнаты может ещё/уже не быть!
-
+		//TODO: Комнаты может ещё/уже не быть!
 		keys := make([]int, 0)
 
 		for key := range Server.Rooms {
@@ -86,20 +119,14 @@ func setChunckState(clientID int, chuncID int) {
 func changeRoom(clientID int, newRoomID int) {
 	_, ok := Server.Rooms[newRoomID]
 	if ok {
-		// var currentRoomID = Server.RoomIDByClient[clientID]
+		logger.InfoPrintf("Новая комната: %v", newRoomID)
 
-		//! Тут отправляется сообщение о попытке отключить пользователя от комнаты.
+		oldRoomID := Server.RoomIDByClient[clientID]
 
-		//! Сообщение о подключении нового пользователя.
+		CreateMessage(Server.Rooms[oldRoomID], clientID, "ClientDisconnect")
+		CreateMessage(Server.Rooms[newRoomID], clientID, "ClientConnect")
 
-		// clietn.Room = room
-
-		// var clientsIDs = []int{clietn.ID}
-
-		// server.UpdateClientsMap(
-		// 	room.ClientConnect(clietn),
-		// 	clientsIDs,
-		// )
+		Server.RoomIDByClient[clientID] = newRoomID
 	} else {
 		logger.WarningPrintf("Err: Клиент %v пытается подключится к комнате которой нет: %v.", clientID, newRoomID)
 		// TODO: нужно отправить сообщение клиенту, о том, что произошла ошибка.
@@ -117,40 +144,6 @@ func clientDisconnect(clientID int) {
 		logger.WarningPrintf("Попытка удалить клиента корого уже нет: id=%v.", clientID)
 		return
 	}
-}
-
-// getRoomsIDAndName - Возвращает список имен комнат
-func getRoomsData() []api.RoomData {
-	var roomsData []api.RoomData
-
-	for k, v := range Server.Rooms {
-		newRoomData := api.RoomData{
-			ID:   k,
-			Name: v,
-		}
-
-		roomsData = append(roomsData, newRoomData)
-	}
-
-	return roomsData
-}
-
-func getAllUsers() []int {
-	result := make([]int, 0)
-	for k := range Server.RoomIDByClient {
-		result = append(result, k)
-	}
-
-	return result
-}
-
-func updateRoomsCatalog() {
-	roomsCatalog := api.RoomsCatalogStruct{
-		ClientIDs:    getAllUsers(),
-		RoomsCatalog: getRoomsData(),
-	}
-
-	api.API.UpdateRoomsCatalog <- roomsCatalog
 }
 
 //--------------------- Обработка API -----------------------//
@@ -179,6 +172,18 @@ func clientConnectCallback(clientID int, status bool, message string) {
 			ClientID:     clientID,
 			RoomsCatalog: getRoomsData(),
 		}
+
+		/*
+			Есть очеред ожидающих подсоединения!
+			Нужно человека добавлять туда и только после ответа добавлять в список на сервере с комнатами.
+			Причем если пришел ответ что мы не можем подключится - пытаемся бросить в другую комнату.
+			Такая же тема с переключающимися. В сообщении от комнаты должна быть вся информация.
+
+			Бредовая мысль но может не надо отдавать карту и список комнат и что бы то ни было ещё, пока их не попросят...
+			тоесть - мы сообщаем что Пользователь подключился комнате, а дальше внешние системы пусть запрашивают что им надо...
+
+			! Для сервисной архитектуры... мы кладем сообщение о новом пользователе в список сообщений и карта отправится по запросу "ударасердца"
+		*/
 
 		api.API.NewClientIsConnectedChl <- newClientIsConnectedStruct
 

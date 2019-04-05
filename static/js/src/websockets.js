@@ -9,6 +9,7 @@ var handlers = {
     'set_grid': set_grid,
     'send_error': send_error,
     'set_rooms_catalog': set_rooms_catalog,
+    'set_select_room': set_select_room,
 };
 
 // Пошла работа с websockets
@@ -50,12 +51,12 @@ function send_error(message){
 // Отправляем запрос на постановку символа в чанк
 function set_chunck_state(chunck_id){
     var data = {
-        'chunck_id': chunck_id
+        'chunck_id': chunck_id,
     }
 
     var message = {
         'handler_name': 'setChunckState',
-        'data': JSON.stringify(data)
+        'data': JSON.stringify(data),
     }
 
     ws.send(JSON.stringify(message));
@@ -63,22 +64,27 @@ function set_chunck_state(chunck_id){
 
 function sendChangeRoomID(roomID){
     var data = {
-        'room_id': parseInt(roomID)
+        'room_id': parseInt(roomID),
     }
 
     var message = {
         'handler_name': 'chengeRoomID',
-        'data': JSON.stringify(data)
+        'data': JSON.stringify(data),
     }
 
-    console.log("Отправляем id = ", message)
+    console.log("Отправляем id = ", message);
 
     ws.send(JSON.stringify(message));
 }
 
 function set_rooms_catalog(roomsIDs){
-    console.log("Католог комнат:", roomsIDs)
+    console.log("Католог комнат:", roomsIDs);
     main.setRoomCatalog(roomsIDs);
+}
+
+function set_select_room(roomID){
+    console.log("Задана комната с id:", roomID);
+    main.setSelectRoom(roomID);
 }
 
 exports.connect = connect;
