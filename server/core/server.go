@@ -2,7 +2,8 @@ package core
 
 import (
 	"../api"
-	"../logger"
+	
+	"github.com/Balhazraell/logger"
 	"github.com/streadway/amqp"
 )
 

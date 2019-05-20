@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"io"
 
-	"../logger"
+	"github.com/Balhazraell/logger"
 	"github.com/streadway/amqp"
 )
 

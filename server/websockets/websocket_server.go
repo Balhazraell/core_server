@@ -8,7 +8,7 @@ import (
 	"golang.org/x/net/websocket"
 
 	"../api"
-	"../logger"
+	"github.com/Balhazraell/logger"
 )
 
 // AppServer - Singletone websoket сервера.

@@ -6,8 +6,8 @@ import (
 	"net/http"
 
 	"./core"
-	"./logger"
 	"./websockets"
+	"github.com/Balhazraell/logger"
 )
 
 func init() {

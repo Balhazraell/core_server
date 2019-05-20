@@ -4,8 +4,8 @@ import (
 	"fmt"
 
 	"../api"
-	"../logger"
-	"../tools"
+	"github.com/Balhazraell/logger"
+	"github.com/Balhazraell/tools"
 )
 
 func newRoomConnect(id int) {
@@ -20,8 +20,6 @@ func newRoomConnect(id int) {
 				clientID := Server.PendingUsers[0]
 				Server.PendingUsers = tools.DeleElementFromArraByIndex(Server.PendingUsers, 0)
 
-				logger.InfoPrint(Server.PendingUsers)
-
 				logger.InfoPrintf("Пользователя с id:%v из очереди ожидания поместили в комнату id:%v", clientID, id)
 
 				Server.RoomIDByClient[clientID] = id
@@ -35,7 +33,6 @@ func newRoomConnect(id int) {
 	}
 }
 
-// getRoomsIDAndName - Возвращает список имен комнат
 func getRoomsData() []api.RoomData {
 	var roomsData []api.RoomData
 
@@ -96,7 +93,7 @@ func clientConnect(clientID int) {
 			return
 		}
 
-		Server.RoomIDByClient[clientID] = keys[0]
+		//Server.RoomIDByClient[clientID] = keys[0]
 		CreateMessage(Server.Rooms[keys[0]], clientID, "ClientConnect")
 	} else {
 		logger.WarningPrintf("Пользователь с id:%v уже существует.", clientID)
@@ -165,7 +162,7 @@ func sendErrorMessage(clientID int, message string) {
 	api.API.SendErrorToСlientChl <- sendErrorToСlientStruct
 }
 
-func clientConnectCallback(clientID int, status bool, message string) {
+func clientConnectCallback(roomID int, clientID int, status bool, message string) {
 	if status {
 		//?TODO: отправка списка комнат идет отдельно, возможно этот вызо не нужен.
 		newClientIsConnectedStruct := api.NewClientIsConnectedStruct{
@@ -193,7 +190,7 @@ func clientConnectCallback(clientID int, status bool, message string) {
 	}
 }
 
-func clientDisconectCallback(clientID int, status bool, message string) {
+func clientDisconectCallback(roomID int, clientID int, status bool, message string) {
 	if status {
 		delete(Server.RoomIDByClient, clientID)
 	}

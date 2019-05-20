@@ -3,7 +3,7 @@ package core
 import (
 	"encoding/json"
 
-	"../logger"
+	"github.com/Balhazraell/logger"
 )
 
 // APIMetods - Перечень доступных API методов.
@@ -86,7 +86,7 @@ func apiClientConnectCallback(data string) {
 		logger.ErrorPrintf("Ошибка при распаковке данных callback при подключении клиента: %s", err)
 	}
 
-	clientConnectCallback(object.ClientID, object.Status, object.Message)
+	// clientConnectCallback(object.ClientID, object.Status, object.Message)
 }
 
 func apiClientDisconnectCallback(data string) {
@@ -97,5 +97,5 @@ func apiClientDisconnectCallback(data string) {
 		logger.ErrorPrintf("Ошибка при распаковке данных callback при подключении клиента: %s", err)
 	}
 
-	clientDisconectCallback(object.ClientID, object.Status, object.Message)
+	// clientDisconectCallback(object.ClientID, object.Status, object.Message)
 }
