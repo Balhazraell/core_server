@@ -2,7 +2,7 @@ package core
 
 import (
 	"../api"
-	
+
 	"github.com/Balhazraell/logger"
 	"github.com/streadway/amqp"
 )
@@ -21,16 +21,18 @@ type server struct {
 	shutdownLoop chan bool
 
 	//--- RabbitMQ
-	connectRMQ *amqp.Connection
-	channelRMQ *amqp.Channel
+	APIandCallbackMetods map[string]func(string)
+	connectRMQ           *amqp.Connection
+	channelRMQ           *amqp.Channel
 }
 
 // ServerStart - метод запуска игрового сервера.
 func ServerStart() {
 	Server = server{
-		RoomIDByClient: make(map[int]int),
-		Rooms:          make(map[int]string),
-		shutdownLoop:   make(chan bool),
+		RoomIDByClient:       make(map[int]int),
+		Rooms:                make(map[int]string),
+		shutdownLoop:         make(chan bool),
+		APIandCallbackMetods: fillMetods(),
 	}
 
 	go Server.loop()
@@ -72,4 +74,13 @@ func (serv *server) loop() {
 			)
 		}
 	}
+}
+
+func fillMetods() map[string]func(string) {
+	result := APIMetods
+	for key, value := range CallbackMetods {
+		result[key] = value
+	}
+
+	return result
 }

@@ -2,6 +2,7 @@ package core
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 
 	"github.com/Balhazraell/logger"
@@ -12,8 +13,13 @@ import (
 
 // Message - Формат сообщений для обмена по RabbitMQ
 type MessageRMQ struct {
+	Meta MessageRMQMeta `json:"message_rmq_meta"`
+	Data string         `json:"data"`
+}
+
+type MessageRMQMeta struct {
 	HandlerName string `json:"handler_name"`
-	Data        string `json:"data"`
+	RoomID      int    `json:"room_id"`
 }
 
 func checkError(err error, message string) {
@@ -110,10 +116,22 @@ func StartRabbitMQ() {
 				logger.ErrorPrintf("Проблема чтения сообщения от комнаты : %v.", err)
 				continue
 			} else {
-				// TODO: можем упасть при вызове не верного метода - надо обработать!
-				// Допустим метод которого нет в списке.
-				// TODO: Написать тесты для этого метода.
-				APIMetods[msg.HandlerName](msg.Data)
+				status, message := validateAPIcall(msg.Meta.HandlerName)
+
+				if status {
+					Server.APIandCallbackMetods[msg.Meta.HandlerName](msg.Data)
+				} else {
+					callbackMessage := callbackStruct{
+						RoomID:  -1,
+						UserID:  -1,
+						Status:  status,
+						Message: message,
+					}
+
+					consumerName := fmt.Sprintf("room_%v", msg.Meta.RoomID)
+
+					CreateMessage(consumerName, callbackMessage, "APICallCallback")
+				}
 			}
 		}
 	}()
@@ -127,9 +145,14 @@ func CreateMessage(consumerName string, data interface{}, methodName string) {
 		return
 	}
 
-	messageRMQ := MessageRMQ{
+	meta := MessageRMQMeta{
 		HandlerName: methodName,
-		Data:        string(message),
+		RoomID:      -1,
+	}
+
+	messageRMQ := MessageRMQ{
+		Meta: meta,
+		Data: string(message),
 	}
 
 	PublishMessage(consumerName, messageRMQ)

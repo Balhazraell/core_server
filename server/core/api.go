@@ -8,11 +8,9 @@ import (
 
 // APIMetods - Перечень доступных API методов.
 var APIMetods = map[string]func(string){
-	"RoomConnect":              apiRoomConnect,
-	"UpdateClientsMap":         apiUpdateClientsMap,
-	"SendErrorMessage":         apiSendErrorMessage,
-	"ClientConnectCallback":    apiClientConnectCallback,
-	"ClientDisconnectCallback": apiClientDisconnectCallback,
+	"RoomConnect":      apiRoomConnect,
+	"UpdateClientsMap": apiUpdateClientsMap,
+	"SendErrorMessage": apiSendErrorMessage,
 }
 
 //------------------ Income struct ---------------------------//
@@ -76,26 +74,4 @@ func apiSendErrorMessage(data string) {
 	}
 
 	sendErrorMessage(object.ClientID, object.ErrorMessage)
-}
-
-func apiClientConnectCallback(data string) {
-	var object clientConnectCallbackStruct
-	err := json.Unmarshal([]byte(data), &object)
-
-	if err != nil {
-		logger.ErrorPrintf("Ошибка при распаковке данных callback при подключении клиента: %s", err)
-	}
-
-	// clientConnectCallback(object.ClientID, object.Status, object.Message)
-}
-
-func apiClientDisconnectCallback(data string) {
-	var object clientDisconnectCallbackStruct
-	err := json.Unmarshal([]byte(data), &object)
-
-	if err != nil {
-		logger.ErrorPrintf("Ошибка при распаковке данных callback при подключении клиента: %s", err)
-	}
-
-	// clientDisconectCallback(object.ClientID, object.Status, object.Message)
 }
