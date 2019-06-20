@@ -14,13 +14,13 @@ type callbackStruct struct {
 }
 
 // CallbackMetods - Перечень методов для получения ответов при запросах.
-var CallbackMetods = map[string]func(string){
+var CallbackMetods = map[string]func(string, int){
 	"СallbackAPICall":          сallbackAPICall,
 	"CallbackClientConnect":    сallbackСlientConnect,
 	"CallbackClientDisconnect": сallbackСlientDisconnect,
 }
 
-func сallbackAPICall(data string) {
+func сallbackAPICall(data string, roomID int) {
 	var callback = callbackStruct{}
 	err := json.Unmarshal([]byte(data), &callback)
 
@@ -33,8 +33,8 @@ func сallbackAPICall(data string) {
 	}
 }
 
-func сallbackСlientConnect(data string) {
-	var object clientConnectCallbackStruct
+func сallbackСlientConnect(data string, roomID int) {
+	var object callbackStruct
 	err := json.Unmarshal([]byte(data), &object)
 
 	if err != nil {
@@ -44,12 +44,12 @@ func сallbackСlientConnect(data string) {
 	// clientConnectCallback(object.ClientID, object.Status, object.Message)
 }
 
-func сallbackСlientDisconnect(data string) {
-	var object clientDisconnectCallbackStruct
+func сallbackСlientDisconnect(data string, roomID int) {
+	var object callbackStruct
 	err := json.Unmarshal([]byte(data), &object)
 
 	if err != nil {
-		logger.ErrorPrintf("Ошибка при распаковке данных callback при подключении клиента: %s", err)
+		logger.ErrorPrintf("Ошибка при распаковке данных callback при отключении клиента: %s", err)
 	}
 
 	// clientDisconectCallback(object.ClientID, object.Status, object.Message)

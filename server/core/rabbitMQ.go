@@ -119,7 +119,7 @@ func StartRabbitMQ() {
 				status, message := validateAPIcall(msg.Meta.HandlerName)
 
 				if status {
-					Server.APIandCallbackMetods[msg.Meta.HandlerName](msg.Data)
+					Server.APIandCallbackMetods[msg.Meta.HandlerName](msg.Data, msg.Meta.RoomID)
 				} else {
 					callbackMessage := callbackStruct{
 						RoomID:  -1,
@@ -130,7 +130,7 @@ func StartRabbitMQ() {
 
 					consumerName := fmt.Sprintf("room_%v", msg.Meta.RoomID)
 
-					CreateMessage(consumerName, callbackMessage, "APICallCallback")
+					CreateMessage(consumerName, callbackMessage, "СallbackAPICall")
 				}
 			}
 		}

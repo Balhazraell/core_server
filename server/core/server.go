@@ -21,7 +21,7 @@ type server struct {
 	shutdownLoop chan bool
 
 	//--- RabbitMQ
-	APIandCallbackMetods map[string]func(string)
+	APIandCallbackMetods map[string]func(string, int)
 	connectRMQ           *amqp.Connection
 	channelRMQ           *amqp.Channel
 }
@@ -76,7 +76,7 @@ func (serv *server) loop() {
 	}
 }
 
-func fillMetods() map[string]func(string) {
+func fillMetods() map[string]func(string, int) {
 	result := APIMetods
 	for key, value := range CallbackMetods {
 		result[key] = value
